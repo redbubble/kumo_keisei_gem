@@ -13,13 +13,13 @@ module KumoKeisei
       @env_template   = cf_opts.fetch(:env_template, nil)
     end
 
-    def apply!
+    def apply!(dynamic_params={})
       if exists?
-        update!
+        update!(dynamic_params)
       else
         flash_message "Looks like you are creating new stack #{stack_name}"
-        create!
-      end
+        create!(dynamic_params)
+      end 
       wait_until_ready
     end
 
@@ -35,13 +35,13 @@ module KumoKeisei
       $?.exitstatus == 0
     end
 
-    def update!
+    def update!(dynamic_params={})
       wait_until_ready
-      run_command("aws cloudformation update-stack --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params}")
+      run_command("aws cloudformation update-stack --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
     end
 
-    def create!
-      run_command("aws cloudformation create-stack --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params}")
+    def create!(dynamic_params={})
+      run_command("aws cloudformation create-stack --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
     end
 
     def wait_until_ready
@@ -70,14 +70,18 @@ module KumoKeisei
       JSON.parse(file)
     end
 
-    def command_line_params
+    def command_line_params(dynamic_params = {})
       params = file_params.map do |k|
         "ParameterKey=#{k['ParameterKey']},ParameterValue=#{k['ParameterValue']}"
       end
 
-      return "" if params.empty?
+      sth = dynamic_params.map do |key, value|
+        "ParameterKey=#{key},ParameterValue=#{value}"
+      end
 
-      "--parameters #{params.join(" ")}"
+      return "" if sth.empty? && params.empty?
+
+       "--parameters #{sth.join(" ")} #{params.join(" ")}"
     end
 
     def flash_message(message)
