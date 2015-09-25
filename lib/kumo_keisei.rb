@@ -23,6 +23,11 @@ module KumoKeisei
       wait_until_ready
     end
 
+    def logical_resource(name)
+      app_resource_description = `aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}`
+      JSON.parse(app_resource_description)["StackResourceDetail"]
+    end
+
     private
 
     def exists?
@@ -47,11 +52,6 @@ module KumoKeisei
         puts "waiting for #{stack_name} to be READY, current: #{last_event_status}"
         sleep 1
       end
-    end
-
-    def logical_resource(name)
-      app_resource_description = `aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}`
-      JSON.parse(app_resource_description)["StackResourceDetail"]
     end
 
     def run_command(command)
