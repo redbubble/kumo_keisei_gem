@@ -49,6 +49,11 @@ module KumoKeisei
       end
     end
 
+    def logical_resource(name)
+      app_resource_description = `aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}`
+      JSON.parse(app_resource_description)["StackResourceDetail"]
+    end
+
     def run_command(command)
       puts command
       result = `#{command} 2>&1`
