@@ -9,9 +9,6 @@ describe KumoKeisei::Bash do
       expect(KumoKeisei::Bash.new.execute("echo 1")).to eq("1")
     end
 
-    it 'raises an exception if returned a non-zero exit code' do
-      expect { KumoKeisei::Bash.new.execute('false') }.to raise_error(RuntimeError)
-    end
   end
 
   describe "#exit_status_for" do

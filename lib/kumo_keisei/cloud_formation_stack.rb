@@ -5,12 +5,13 @@ module KumoKeisei
 
   class CloudFormationStack
 
-    attr_reader :stack_name
+    attr_reader :stack_name, :bash
 
     def initialize(cf_opts = {})
-      @stack_name    = cf_opts[:stack]
-      @base_template = cf_opts[:base_template]
+      @stack_name    = cf_opts.fetch(:stack)
+      @base_template = cf_opts.fetch(:base_template)
       @env_template   = cf_opts.fetch(:env_template, nil)
+      @bash = Bash.new
     end
 
     def apply!(dynamic_params={})
@@ -24,15 +25,14 @@ module KumoKeisei
     end
 
     def logical_resource(name)
-      app_resource_description = Bash.new.execute("aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}")
+      app_resource_description = bash.execute("aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}")
       JSON.parse(app_resource_description)["StackResourceDetail"]
     end
 
     private
 
     def exists?
-      `aws cloudformation describe-stack-resources --stack-name #{stack_name}`
-      $?.exitstatus == 0
+      bash.exit_status_for("aws cloudformation describe-stack-resources --stack-name #{stack_name}") == 0
     end
 
     def update!(dynamic_params={})
@@ -46,7 +46,7 @@ module KumoKeisei
 
     def wait_until_ready
       loop do
-        stack_events      = `aws cloudformation describe-stacks --stack-name #{stack_name}`
+        stack_events      = bash.execute("aws cloudformation describe-stacks --stack-name #{stack_name}")
         last_event_status = JSON.parse(stack_events)["Stacks"].first["StackStatus"]
         break if last_event_status =~ /COMPLETE/
         puts "waiting for #{stack_name} to be READY, current: #{last_event_status}"
@@ -56,7 +56,7 @@ module KumoKeisei
 
     def run_command(command)
       puts command
-      result = `#{command} 2>&1`
+      result = bash.execute(command.strip)
       if result =~ /No updates are to be performed/
         puts "No updates are to be performed"
         return
