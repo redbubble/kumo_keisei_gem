@@ -1,3 +1,3 @@
 module KumoKeisei
-  VERSION = "0.0.#{ENV.fetch('KUMO_KEISEI_VERSION')}"
+  VERSION = "0.0.#{ENV.fetch('BUILDKITE_BUILD_NUMBER')}"
 end
