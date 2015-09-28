@@ -1,3 +1,3 @@
 module KumoKeisei
-  VERSION = "0.0.6"
+  VERSION = ENV.fetch("KUMO_KEISEI_VERSION")
 end
