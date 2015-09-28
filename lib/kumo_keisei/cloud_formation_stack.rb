@@ -1,4 +1,5 @@
 require "json"
+require_relative "bash"
 
 module KumoKeisei
 
@@ -23,7 +24,7 @@ module KumoKeisei
     end
 
     def logical_resource(name)
-      app_resource_description = `aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}`
+      app_resource_description = Bash.new.execute("aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}")
       JSON.parse(app_resource_description)["StackResourceDetail"]
     end
 
