@@ -1,7 +1,9 @@
 module KumoKeisei
   class Bash
     def execute(command)
-      `#{command}`.strip
+      output = `#{command} 2>&1`.strip
+      raise "unexpected exit code: #{$?.exitstatus} when running #{command}: #{output}" unless $?.exitstatus == 0
+      output
     end
   end
 end
