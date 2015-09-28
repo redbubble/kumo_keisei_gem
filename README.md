@@ -29,6 +29,11 @@ cf_opts = {
 KumoKeisei::CloudFormationStack.new(cf_opts).apply!
 ```
 
+## Release
+
+1. Upgrade version in version.rb
+2. Run ./script/release-gem
+
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/kumo_keisei/fork )
