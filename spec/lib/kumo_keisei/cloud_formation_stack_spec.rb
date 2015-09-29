@@ -21,7 +21,7 @@ describe KumoKeisei::CloudFormationStack do
       let(:stack_exists) { true }
 
       it "updates the stack" do
-
+        allow(subject).to receive(:puts)
         allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return('{"Stacks": [{ "StackStatus": "COMPLETE" }] }')
         expect(bash).to receive(:execute).with("aws cloudformation update-stack --stack-name my-stack --template-body file://template.json")
         subject.apply!
@@ -34,7 +34,8 @@ describe KumoKeisei::CloudFormationStack do
       let(:stack_exists) { false }
 
       it "creates the stack" do
-
+        allow(subject).to receive(:flash_message)
+        allow(subject).to receive(:puts)
         allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return('{"Stacks": [{ "StackStatus": "COMPLETE" }] }')
         expect(bash).to receive(:execute).with("aws cloudformation create-stack --stack-name my-stack --template-body file://template.json")
         subject.apply!
