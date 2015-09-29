@@ -29,11 +29,11 @@ describe KumoKeisei::CloudFormationStack do
 
     end
 
-    context "stack doesn't exists" do
+    context "stack doesn't exist" do
 
       let(:stack_exists) { false }
 
-      it "updates the stack" do
+      it "creates the stack" do
 
         allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return('{"Stacks": [{ "StackStatus": "COMPLETE" }] }')
         expect(bash).to receive(:execute).with("aws cloudformation create-stack --stack-name my-stack --template-body file://template.json")
