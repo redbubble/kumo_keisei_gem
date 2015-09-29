@@ -13,7 +13,7 @@ describe KumoKeisei::CloudFormationStack do
   describe "#apply!" do
 
     before do
-      allow(subject).to receive(:puts)
+      allow($stdout).to receive(:puts)
       allow(bash).to receive(:exit_status_for).with("aws cloudformation describe-stack-resources --stack-name my-stack").and_return(stack_exists ? 0 : 1)
     end
 
