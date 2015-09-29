@@ -1,6 +1,6 @@
 # KumoKeisei
 
-A collection of utilities for dealing with AWS Cloud Formation.
+A collection of utilities wrapping the libraries for dealing with AWS Cloud Formation.
 
 ## Installation
 
@@ -28,6 +28,16 @@ cf_opts = {
 }
 KumoKeisei::CloudFormationStack.new(cf_opts).apply!
 ```
+
+## Dependencies
+
+#### AWS CLI
+
+This gem requires the aws cli to be installed. If you don't have it, it won't work!!
+
+#### Ruby Versions
+
+This gem is tested with Ruby (MRI) versions 1.9.3 and 2.2.3.
 
 ## Release
 

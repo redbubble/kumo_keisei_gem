@@ -2,5 +2,5 @@ require_relative "kumo_keisei/cloud_formation_stack"
 require "json"
 
 module KumoKeisei
-  VERSION = "0.0.14"
+  VERSION = "0.0.15"
 end
