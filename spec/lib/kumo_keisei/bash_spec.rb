@@ -3,6 +3,10 @@ require 'kumo_keisei/bash'
 
 describe KumoKeisei::Bash do
 
+  before do
+      allow($stdout).to receive(:puts)
+  end
+
   describe "#execute" do
 
     it "runs bash and returns output" do

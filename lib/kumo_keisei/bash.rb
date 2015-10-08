@@ -6,6 +6,7 @@ module KumoKeisei
     end
 
     def exit_status_for(command)
+      puts "Executing --> #{command}"
       `#{command}`
       $?.exitstatus
     end
