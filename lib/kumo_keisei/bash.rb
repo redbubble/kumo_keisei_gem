@@ -1,12 +1,12 @@
 module KumoKeisei
   class Bash
     def execute(command)
+      puts "Executing --> #{command}"
       output = `#{command} 2>&1`.strip
       output
     end
 
     def exit_status_for(command)
-      puts "Executing --> #{command}"
       `#{command}`
       $?.exitstatus
     end
