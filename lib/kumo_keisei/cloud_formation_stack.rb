@@ -37,11 +37,11 @@ module KumoKeisei
 
     def update!(dynamic_params={})
       wait_until_ready
-      run_command("aws cloudformation update-stack --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
+      run_command("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
     end
 
     def create!(dynamic_params={})
-      run_command("aws cloudformation create-stack --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
+      run_command("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
     end
 
     def wait_until_ready

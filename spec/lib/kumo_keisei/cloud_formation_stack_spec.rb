@@ -23,7 +23,7 @@ describe KumoKeisei::CloudFormationStack do
 
       it "updates the stack" do
         allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return('{"Stacks": [{ "StackStatus": "COMPLETE" }] }')
-        expect(bash).to receive(:execute).with("aws cloudformation update-stack --stack-name my-stack --template-body file://template.json")
+        expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json")
         subject.apply!
       end
 
@@ -35,7 +35,7 @@ describe KumoKeisei::CloudFormationStack do
 
       it "creates the stack" do
         allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return('{"Stacks": [{ "StackStatus": "COMPLETE" }] }')
-        expect(bash).to receive(:execute).with("aws cloudformation create-stack --stack-name my-stack --template-body file://template.json")
+        expect(bash).to receive(:execute).with("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json")
         subject.apply!
       end
 
