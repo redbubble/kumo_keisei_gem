@@ -9,10 +9,20 @@ describe KumoKeisei::Bash do
 
   describe "#execute" do
 
+    let(:command_string) { "echo 1" }
+
+    subject { KumoKeisei::Bash.new.execute(command_string) }
+
     it "runs bash and returns output" do
-      expect(KumoKeisei::Bash.new.execute("echo 1")).to eq("1")
+      expect(subject).to eq("1")
     end
 
+    context "when  block is given" do
+
+      let(:command_string) { "echo 'Hiya!' && false" }
+
+      it { expect { |block| KumoKeisei::Bash.new.execute(command_string, &block) }.to yield_with_args('Hiya!', 1) }
+    end
   end
 
   describe "#exit_status_for" do

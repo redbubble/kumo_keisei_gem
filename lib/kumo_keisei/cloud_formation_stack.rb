@@ -37,11 +37,23 @@ module KumoKeisei
 
     def update!(dynamic_params={})
       wait_until_ready
-      run_command("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
+      run_command("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
+        if exit_status > 0
+          if response =~ /No updates are to be performed/
+            puts "No updates are to be performed"
+            return
+          end
+          puts response
+          raise AwsCliError.new response
+        end
+      end
     end
 
     def create!(dynamic_params={})
-      run_command("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}")
+      run_command("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
+        puts response
+        raise AwsCliError.new response unless exit_status == 0
+      end
     end
 
     def wait_until_ready
@@ -54,14 +66,9 @@ module KumoKeisei
       end
     end
 
-    def run_command(command)
+    def run_command(command, &block)
       puts command
-      result = bash.execute(command.strip)
-      if result =~ /No updates are to be performed/
-        puts "No updates are to be performed"
-        return
-      end
-      puts result
+      puts bash.execute(command.strip, &block)
     end
 
     def file_params
@@ -91,5 +98,7 @@ module KumoKeisei
       puts "------------=============================###################"
       puts "\n\n"
     end
+
+    class AwsCliError < StandardError; end
   end
 end
