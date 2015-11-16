@@ -90,4 +90,14 @@ describe KumoKeisei::CloudFormationStack do
       expect(subject.logical_resource("my-resource")).to eq ({ "key" => "value"  })
     end
   end
+
+  describe "#outputs" do
+
+    it "returns outputs for a stack" do
+
+      expect(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name=my-stack").and_return('{ "Stacks": [ { "Outputs": [ { "OutputKey": "MyKey", "OutputValue": "MyValue" }] } ] }')
+
+      expect(subject.outputs("MyKey")).to eq ("MyValue")
+    end
+  end
 end

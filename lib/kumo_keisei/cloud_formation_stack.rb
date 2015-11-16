@@ -29,6 +29,13 @@ module KumoKeisei
       JSON.parse(app_resource_description)["StackResourceDetail"]
     end
 
+    def outputs(key)
+      stacks_json = bash.execute("aws cloudformation describe-stacks --stack-name=#{@stack_name}")
+      outputs = JSON.parse(stacks_json)["Stacks"].first["Outputs"]
+      entry = outputs.find { |e| e["OutputKey"] == key }
+      entry["OutputValue"]
+    end
+
     private
 
     def exists?
