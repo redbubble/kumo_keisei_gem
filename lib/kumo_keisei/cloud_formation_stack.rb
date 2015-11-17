@@ -67,10 +67,21 @@ module KumoKeisei
       loop do
         stack_events      = bash.execute("aws cloudformation describe-stacks --stack-name #{stack_name}")
         last_event_status = JSON.parse(stack_events)["Stacks"].first["StackStatus"]
-        break if last_event_status =~ /COMPLETE/
+        if stack_ready?(last_event_status)
+          raise last_event_status if stack_failed?(last_event_status)
+          break
+        end
         puts "waiting for #{stack_name} to be READY, current: #{last_event_status}"
         sleep 1
       end
+    end
+
+    def stack_ready?(last_event_status)
+      last_event_status =~ /COMPLETE/ || last_event_status =~ /ROLLBACK_FAILED/
+    end
+
+    def stack_failed?(last_event_status)
+      last_event_status =~ /ROLLBACK/
     end
 
     def run_command(command, &block)

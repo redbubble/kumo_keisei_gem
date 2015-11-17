@@ -78,6 +78,33 @@ describe KumoKeisei::CloudFormationStack do
 
     end
 
+    context "rollback" do
+
+      let(:stack_exists) { true }
+      let(:stack_status) { 'ROLLBACK_COMPLETE' }
+
+      before do
+        allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return('{"Stacks": [{ "StackStatus": "'+stack_status+'" }] }')
+        allow(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json")
+      end
+
+      it "raises exception" do
+        expect { subject.apply! }.to raise_error StandardError
+      end
+
+
+      context "rollback failed" do
+
+        let(:stack_status) { 'ROLLBACK_FAILED' }
+
+        it "raises exception" do
+          expect { subject.apply! }.to raise_error StandardError
+        end
+
+      end
+
+    end
+
 
   end
 
