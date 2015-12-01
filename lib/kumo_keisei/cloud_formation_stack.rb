@@ -1,4 +1,6 @@
 require "json"
+require 'shellwords'
+
 require_relative "bash"
 
 module KumoKeisei
@@ -89,24 +91,29 @@ module KumoKeisei
       puts bash.execute(command.strip, &block)
     end
 
-    def file_params
-      return [] unless (@env_template && File.exist?(@env_template))
-      file = File.read(@env_template)
-      JSON.parse(file)
+    def command_line_params(dynamic_params = {})
+      params = file_params.merge(dynamic_params).map do |key, value|
+        {
+         "ParameterKey" => key,
+         "ParameterValue" => value
+        }
+      end
+
+      return "" if params.empty?
+
+      parameters_string = Shellwords.escape(params.to_json)
+       "--parameters #{parameters_string}"
     end
 
-    def command_line_params(dynamic_params = {})
-      params = file_params.map do |k|
-        "ParameterKey=#{k['ParameterKey']},ParameterValue=#{k['ParameterValue']}"
+    def file_params
+      return {} unless (@env_template && File.exist?(@env_template))
+      file = File.read(@env_template)
+      json = JSON.parse(file)
+
+      json.reduce({}) do |acc, item|
+        acc[item['ParameterKey'].to_sym] = item['ParameterValue']
+        acc
       end
-
-      sth = dynamic_params.map do |key, value|
-        "ParameterKey=#{key},ParameterValue=#{value}"
-      end
-
-      return "" if sth.empty? && params.empty?
-
-       "--parameters #{sth.join(" ")} #{params.join(" ")}"
     end
 
     def flash_message(message)

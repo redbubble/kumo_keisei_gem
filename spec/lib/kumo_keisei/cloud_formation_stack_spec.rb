@@ -36,7 +36,7 @@ describe KumoKeisei::CloudFormationStack do
         context "dynamic parameters" do
 
           it "passes parameters" do
-            expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters ParameterKey=testDynamicKey,ParameterValue=testValue")
+            expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testDynamicKey\",\"ParameterValue\":\"testValue\"\}\]')
             subject.apply!(testDynamicKey: 'testValue')
           end
 
@@ -61,15 +61,37 @@ describe KumoKeisei::CloudFormationStack do
           end
 
           it "passes parameters" do
-            expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters  ParameterKey=testFileKey,ParameterValue=testFileValue")
+            expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testFileKey\",\"ParameterValue\":\"testFileValue\"\}\]')
             subject.apply!
           end
 
           context "and dynamic params" do
 
             it "passes all parameters" do
-              expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters ParameterKey=testDynamicKey,ParameterValue=testDynamicValue ParameterKey=testFileKey,ParameterValue=testFileValue")
+              expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testFileKey\",\"ParameterValue\":\"testFileValue\"\},\{\"ParameterKey\":\"testDynamicKey\",\"ParameterValue\":\"testDynamicValue\"\}\]')
               subject.apply!(testDynamicKey: 'testDynamicValue')
+            end
+
+            it 'overrides file params' do
+              expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testFileKey\",\"ParameterValue\":\"testDynamicValue\"\}\]')
+              subject.apply!(testFileKey: 'testDynamicValue')
+            end
+
+          end
+
+          context "list in params" do
+            let(:params_file_content) {
+              [
+                  {
+                      "ParameterKey" => "testFileKey",
+                      "ParameterValue" => "testFileValue1,testFileValue2",
+                  },
+              ]
+            }
+
+            it "passes escaped parameters" do
+              expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testFileKey\",\"ParameterValue\":\"testFileValue1,testFileValue2\"\}\]')
+              subject.apply!
             end
 
           end
