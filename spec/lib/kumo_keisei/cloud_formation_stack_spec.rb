@@ -4,7 +4,8 @@ describe KumoKeisei::CloudFormationStack do
 
   let(:bash) { double('bash') }
 
-  subject { KumoKeisei::CloudFormationStack.new(stack: "my-stack", base_template: "template.json") }
+  let(:stack_options) { { stack: "my-stack", base_template: "template.json" } }
+  subject { KumoKeisei::CloudFormationStack.new(stack_options) }
 
   before do
     allow(KumoKeisei::Bash).to receive(:new).and_return(bash)
@@ -28,6 +29,53 @@ describe KumoKeisei::CloudFormationStack do
       it "updates the stack" do
         expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json")
         subject.apply!
+      end
+
+      context "when specifying params" do
+
+        context "dynamic parameters" do
+
+          it "passes parameters" do
+            expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters ParameterKey=testDynamicKey,ParameterValue=testValue")
+            subject.apply!(testDynamicKey: 'testValue')
+          end
+
+        end
+
+        context "file params" do
+
+          let(:params_file_content) {
+            [
+              {
+                "ParameterKey" => "testFileKey",
+                "ParameterValue" => "testFileValue",
+              },
+            ]
+          }
+          let(:params_file_name) { "params.json"  }
+          let(:stack_options) { { stack: "my-stack", base_template: "template.json", env_template: params_file_name} }
+
+          before do
+            allow(File).to receive(:exist?).with(params_file_name).and_return(true)
+            allow(File).to receive(:read).with(params_file_name).and_return(params_file_content.to_json)
+          end
+
+          it "passes parameters" do
+            expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters  ParameterKey=testFileKey,ParameterValue=testFileValue")
+            subject.apply!
+          end
+
+          context "and dynamic params" do
+
+            it "passes all parameters" do
+              expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters ParameterKey=testDynamicKey,ParameterValue=testDynamicValue ParameterKey=testFileKey,ParameterValue=testFileValue")
+              subject.apply!(testDynamicKey: 'testDynamicValue')
+            end
+
+          end
+
+        end
+
       end
 
       context "when the command is unsuccessful" do
