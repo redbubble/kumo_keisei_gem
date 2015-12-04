@@ -45,7 +45,7 @@ module KumoKeisei
     end
 
     def update!(dynamic_params={})
-      wait_until_ready
+      wait_until_ready(false)
       run_command("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
         if exit_status > 0
           if response =~ /No updates are to be performed/
@@ -65,12 +65,14 @@ module KumoKeisei
       end
     end
 
-    def wait_until_ready
+    def wait_until_ready(raise_on_error=true)
       loop do
         stack_events      = bash.execute("aws cloudformation describe-stacks --stack-name #{stack_name}")
         last_event_status = JSON.parse(stack_events)["Stacks"].first["StackStatus"]
         if stack_ready?(last_event_status)
-          raise last_event_status if stack_failed?(last_event_status)
+          if raise_on_error && stack_failed?(last_event_status)
+            raise last_event_status
+          end
           break
         end
         puts "waiting for #{stack_name} to be READY, current: #{last_event_status}"
