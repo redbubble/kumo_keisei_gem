@@ -31,6 +31,22 @@ describe KumoKeisei::CloudFormationStack do
         subject.apply!
       end
 
+      context "stack starts with UPDATE_ROLLBACK_COMPLETE status" do
+
+        before do
+          allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return(
+            '{"Stacks": [{ "StackStatus": "UPDATE_ROLLBACK_COMPLETE" }] }',
+            '{"Stacks": [{ "StackStatus": "UPDATE_COMPLETE" }] }',
+          )
+        end
+
+        it "updates the stack" do
+          expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json")
+          subject.apply!
+        end
+
+      end
+
       context "when specifying params" do
 
         context "dynamic parameters" do
