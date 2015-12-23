@@ -26,6 +26,17 @@ module KumoKeisei
       wait_until_ready
     end
 
+    def destroy!
+      wait_until_ready(false)
+      run_command("aws cloudformation delete-stack --stack-name #{stack_name}") do |response, exit_status|
+        if exit_status > 0
+          puts response
+          raise AwsCliError.new response
+        end
+      end
+      wait_until_ready
+    end
+
     def logical_resource(name)
       app_resource_description = bash.execute("aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}")
       JSON.parse(app_resource_description)["StackResourceDetail"]
