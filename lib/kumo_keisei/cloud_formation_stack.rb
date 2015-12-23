@@ -79,6 +79,7 @@ module KumoKeisei
     def wait_until_ready(raise_on_error=true)
       loop do
         stack_events      = bash.execute("aws cloudformation describe-stacks --stack-name #{stack_name}")
+        break if stack_events =~ /does not exist/
         last_event_status = JSON.parse(stack_events)["Stacks"].first["StackStatus"]
         if stack_ready?(last_event_status)
           if raise_on_error && stack_failed?(last_event_status)

@@ -11,6 +11,16 @@ describe KumoKeisei::CloudFormationStack do
     allow(KumoKeisei::Bash).to receive(:new).and_return(bash)
   end
 
+  describe "#destroy" do
+
+     it "updates the stack" do
+        allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name my-stack").and_return('{"Stacks": [{ "StackStatus": "COMPLETE" }] }', "does not exist")
+        expect(bash).to receive(:execute).with("aws cloudformation delete-stack --stack-name my-stack")
+        subject.destroy!
+    end
+
+  end
+
   describe "#apply!" do
 
     before do
