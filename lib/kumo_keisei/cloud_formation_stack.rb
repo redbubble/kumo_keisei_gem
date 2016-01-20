@@ -9,6 +9,10 @@ module KumoKeisei
 
     attr_reader :stack_name, :bash
 
+    def self.exists?(stack_name)
+      Bash.new.exit_status_for("aws cloudformation describe-stack-resources --stack-name #{stack_name}") == 0
+    end
+
     def initialize(cf_opts = {})
       @stack_name    = cf_opts.fetch(:stack)
       @base_template = cf_opts.fetch(:base_template)
@@ -52,7 +56,7 @@ module KumoKeisei
     private
 
     def exists?
-      bash.exit_status_for("aws cloudformation describe-stack-resources --stack-name #{stack_name}") == 0
+      CloudFormationStack.exists?(stack_name)
     end
 
     def update!(dynamic_params={})
