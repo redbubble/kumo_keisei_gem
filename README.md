@@ -41,7 +41,7 @@ This gem is tested with Ruby (MRI) versions 1.9.3 and 2.2.3.
 
 ## Release
 
-1. Upgrade version in version.rb
+1. Upgrade version in kumo_keisei.rb
 2. Run ./script/release-gem
 
 ## Contributing
