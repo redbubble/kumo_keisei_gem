@@ -13,10 +13,10 @@ module KumoKeisei
       Bash.new.exit_status_for("aws cloudformation describe-stack-resources --stack-name #{stack_name}") == 0
     end
 
-    def initialize(cf_opts = {})
-      @stack_name    = cf_opts.fetch(:stack)
-      @base_template = cf_opts.fetch(:base_template)
-      @env_template   = cf_opts.fetch(:env_template, nil)
+    def initialize(stack_name, base_template, env_template = nil)
+      @stack_name = stack_name
+      @base_template = base_template
+      @env_template = env_template
       @bash = Bash.new
     end
 

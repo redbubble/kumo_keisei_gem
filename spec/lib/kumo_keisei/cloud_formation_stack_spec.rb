@@ -4,8 +4,10 @@ describe KumoKeisei::CloudFormationStack do
 
   let(:bash) { double('bash') }
 
-  let(:stack_options) { { stack: "my-stack", base_template: "template.json" } }
-  subject { KumoKeisei::CloudFormationStack.new(stack_options) }
+  let(:stack_name) { "my-stack" }
+  let(:base_template) { "template.json" }
+  let(:env_template) { nil }
+  subject { KumoKeisei::CloudFormationStack.new(stack_name, base_template, env_template) }
 
   before do
     allow(KumoKeisei::Bash).to receive(:new).and_return(bash)
@@ -79,7 +81,7 @@ describe KumoKeisei::CloudFormationStack do
             ]
           }
           let(:params_file_name) { "params.json"  }
-          let(:stack_options) { { stack: "my-stack", base_template: "template.json", env_template: params_file_name} }
+          let(:env_template) { params_file_name }
 
           before do
             allow(File).to receive(:exist?).with(params_file_name).and_return(true)
