@@ -13,10 +13,10 @@ module KumoKeisei
       Bash.new.exit_status_for("aws cloudformation describe-stack-resources --stack-name #{stack_name}") == 0
     end
 
-    def initialize(stack_name, stack_template, stack_params_file = nil)
+    def initialize(stack_name, stack_template, stack_params_filepath = nil)
       @stack_name = stack_name
       @stack_template = stack_template
-      @stack_params_file = stack_params_file
+      @stack_params_filepath = stack_params_filepath
       @bash = Bash.new
     end
 
@@ -124,8 +124,8 @@ module KumoKeisei
     end
 
     def file_params
-      return {} unless (@stack_params_file && File.exist?(@stack_params_file))
-      file = File.read(@stack_params_file)
+      return {} unless (@stack_params_filepath && File.exist?(@stack_params_filepath))
+      file = File.read(@stack_params_filepath)
       json = JSON.parse(file)
 
       json.reduce({}) do |acc, item|
