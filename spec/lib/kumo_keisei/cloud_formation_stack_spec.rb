@@ -5,9 +5,9 @@ describe KumoKeisei::CloudFormationStack do
   let(:bash) { double('bash') }
 
   let(:stack_name) { "my-stack" }
-  let(:base_template) { "template.json" }
+  let(:stack_template) { "template.json" }
   let(:env_template) { nil }
-  subject { KumoKeisei::CloudFormationStack.new(stack_name, base_template, env_template) }
+  subject { KumoKeisei::CloudFormationStack.new(stack_name, stack_template, env_template) }
 
   before do
     allow(KumoKeisei::Bash).to receive(:new).and_return(bash)

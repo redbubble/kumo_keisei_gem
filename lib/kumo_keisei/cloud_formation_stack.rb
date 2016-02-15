@@ -13,9 +13,9 @@ module KumoKeisei
       Bash.new.exit_status_for("aws cloudformation describe-stack-resources --stack-name #{stack_name}") == 0
     end
 
-    def initialize(stack_name, base_template, stack_params_file = nil)
+    def initialize(stack_name, stack_template, stack_params_file = nil)
       @stack_name = stack_name
-      @base_template = base_template
+      @stack_template = stack_template
       @stack_params_file = stack_params_file
       @bash = Bash.new
     end
@@ -61,7 +61,7 @@ module KumoKeisei
 
     def update!(dynamic_params={})
       wait_until_ready(false)
-      run_command("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
+      run_command("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@stack_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
         if exit_status > 0
           if response =~ /No updates are to be performed/
             puts "No updates are to be performed"
@@ -74,7 +74,7 @@ module KumoKeisei
     end
 
     def create!(dynamic_params={})
-      run_command("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@base_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
+      run_command("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@stack_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
         puts response
         raise AwsCliError.new response unless exit_status == 0
       end
