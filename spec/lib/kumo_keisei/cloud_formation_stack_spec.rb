@@ -4,8 +4,10 @@ describe KumoKeisei::CloudFormationStack do
 
   let(:bash) { double('bash') }
 
-  let(:stack_options) { { stack: "my-stack", base_template: "template.json" } }
-  subject { KumoKeisei::CloudFormationStack.new(stack_options) }
+  let(:stack_name) { "my-stack" }
+  let(:stack_template) { "template.json" }
+  let(:env_template) { nil }
+  subject { KumoKeisei::CloudFormationStack.new(stack_name, stack_template, env_template) }
 
   before do
     allow(KumoKeisei::Bash).to receive(:new).and_return(bash)
@@ -54,7 +56,6 @@ describe KumoKeisei::CloudFormationStack do
           expect(bash).to receive(:execute).with("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json")
           subject.apply!
         end
-
       end
 
       context "when specifying params" do
@@ -65,7 +66,6 @@ describe KumoKeisei::CloudFormationStack do
             expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testDynamicKey\",\"ParameterValue\":\"testValue\"\}\]')
             subject.apply!(testDynamicKey: 'testValue')
           end
-
         end
 
         context "file params" do
@@ -79,7 +79,7 @@ describe KumoKeisei::CloudFormationStack do
             ]
           }
           let(:params_file_name) { "params.json"  }
-          let(:stack_options) { { stack: "my-stack", base_template: "template.json", env_template: params_file_name} }
+          let(:env_template) { params_file_name }
 
           before do
             allow(File).to receive(:exist?).with(params_file_name).and_return(true)
@@ -102,7 +102,6 @@ describe KumoKeisei::CloudFormationStack do
               expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testFileKey\",\"ParameterValue\":\"testDynamicValue\"\}\]')
               subject.apply!(testFileKey: 'testDynamicValue')
             end
-
           end
 
           context "list in params" do
@@ -119,11 +118,8 @@ describe KumoKeisei::CloudFormationStack do
               expect(bash).to receive(:execute).with('aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json --parameters \[\{\"ParameterKey\":\"testFileKey\",\"ParameterValue\":\"testFileValue1,testFileValue2\"\}\]')
               subject.apply!
             end
-
           end
-
         end
-
       end
 
       context "when the command is unsuccessful" do
@@ -171,7 +167,6 @@ describe KumoKeisei::CloudFormationStack do
         expect(bash).to receive(:execute).with("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name my-stack --template-body file://template.json")
         subject.apply!
       end
-
     end
 
     context "rollback" do
@@ -196,12 +191,8 @@ describe KumoKeisei::CloudFormationStack do
         it "raises exception" do
           expect { subject.apply! }.to raise_error StandardError
         end
-
       end
-
     end
-
-
   end
 
   describe "#logical_resource" do
