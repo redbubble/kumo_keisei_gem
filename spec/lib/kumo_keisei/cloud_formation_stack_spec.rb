@@ -7,7 +7,7 @@ describe KumoKeisei::CloudFormationStack do
   let(:stack_name) { "my-stack" }
   let(:stack_template) { "template.json" }
   let(:env_template) { nil }
-  subject { KumoKeisei::CloudFormationStack.new(stack_name, stack_template, env_template) }
+  subject(:instance) { KumoKeisei::CloudFormationStack.new(stack_name, stack_template, env_template) }
 
   before do
     allow(KumoKeisei::Bash).to receive(:new).and_return(bash)
@@ -212,6 +212,67 @@ describe KumoKeisei::CloudFormationStack do
       expect(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name=my-stack").and_return('{ "Stacks": [ { "Outputs": [ { "OutputKey": "MyKey", "OutputValue": "MyValue" }] } ] }')
 
       expect(subject.outputs("MyKey")).to eq ("MyValue")
+    end
+  end
+
+  describe "fetch_param" do
+
+    subject { instance.fetch_param(key) }
+
+    before do
+      allow(bash).to receive(:execute).with("aws cloudformation describe-stacks --stack-name=my-stack").and_return(stack_description)
+    end
+
+    context "when given a param key" do
+
+      let(:key) { "known_key" }
+
+      context "when the stack has a parameter for the given key" do
+
+        let(:stack_description) do
+          { "Stacks" => [
+              {
+                "Parameters" => [ {"ParameterKey" => "known_key", "ParameterValue" => "superman"} ]
+              }
+          ] }.to_json
+        end
+
+        it "returns the parameter value" do
+          expect(subject).to eq "superman"
+        end
+      end
+
+      context "when the stack doesn't have a parameter for the given key" do
+
+        let(:key) { "unknown_key" }
+
+        let(:stack_description) do
+          { "Stacks" => [
+              {
+                "Parameters" => [ {"ParameterKey" => "some_other_key", "ParameterValue" => "superman"} ]
+              }
+          ] }.to_json
+        end
+
+        it "returns nil" do
+          expect(subject).to eq nil
+        end
+      end
+
+      context "when the reponse from aws is in an unexpected format" do
+
+        let(:key) { "anything" }
+
+        let(:stack_description) do
+          { "Any key except for Stacks" => [
+              { "Parameters" => [ {"ParameterKey" => "some_other_key", "ParameterValue" => "superman"} ] }
+          ] }.to_json
+        end
+
+        it "raises a helpful error" do
+          expect{subject}.to raise_error KumoKeisei::CloudFormationStack::ParseError, "Could not parse response from AWS: #{stack_description}"
+        end
+      end
     end
   end
 end

@@ -6,6 +6,7 @@ require_relative "bash"
 module KumoKeisei
 
   class CloudFormationStack
+    class ParseError < StandardError; end
 
     attr_reader :stack_name, :bash
 
@@ -44,6 +45,12 @@ module KumoKeisei
     def logical_resource(name)
       app_resource_description = bash.execute("aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}")
       JSON.parse(app_resource_description)["StackResourceDetail"]
+    end
+
+    def fetch_param(param_key)
+      stack_response = bash.execute("aws cloudformation describe-stacks --stack-name=#{@stack_name}")
+      param = JSON.parse(stack_response)["Stacks"].first["Parameters"].find { |param| param["ParameterKey"] == param_key } rescue raise(ParseError, "Could not parse response from AWS: #{stack_response}")
+      param ? param["ParameterValue"] : nil
     end
 
     def outputs(key)
