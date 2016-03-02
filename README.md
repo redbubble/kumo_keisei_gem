@@ -21,12 +21,11 @@ Or install it yourself as:
 ## Usage
 
 ```ruby
-cf_opts = {
-  stack: sqs_stack_name,
-  base_template: "./cloudformation/sqs.json",
-  env_template: "./cloudformation/environments/production.json"
-}
-KumoKeisei::CloudFormationStack.new(cf_opts).apply!
+stack_name = "my_awesome_stack"
+template = "./cloudformation/environment_template.json"
+template_params = "./cloudformation/environments/production/params.json"
+
+KumoKeisei::CloudFormationStack.new(stack_name, template, template_params).apply!
 ```
 
 ## Dependencies
