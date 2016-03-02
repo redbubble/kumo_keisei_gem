@@ -4,6 +4,8 @@ A collection of utilities wrapping the libraries for dealing with AWS Cloud Form
 
 ## Installation
 
+This gem is automatically installed in the rbdevtools container, so any `apply-env` or `deploy` scripts have access to it.
+
 Add this line to your application's Gemfile:
 
 ```ruby
