@@ -1,5 +1,6 @@
 require "json"
 require 'shellwords'
+require 'aws-sdk'
 
 require_relative "bash"
 
@@ -7,6 +8,19 @@ module KumoKeisei
 
   class CloudFormationStack
     class ParseError < StandardError; end
+    class AwsCliError < StandardError; end
+
+    UPDATEABLE_STATUSES = [
+      'UPDATE_ROLLBACK_COMPLETE',
+      'CREATE_COMPLETE',
+      'UPDATE_COMPLETE',
+      'DELETE_COMPLETE'
+    ]
+
+    RECOVERABLE_STATUSES = [
+      'ROLLBACK_COMPLETE',
+      'ROLLBACK_FAILED'
+    ]
 
     attr_reader :stack_name, :bash
 
@@ -22,13 +36,14 @@ module KumoKeisei
     end
 
     def apply!(dynamic_params={})
-      if exists?
+      if updatable?
         update!(dynamic_params)
       else
+        flash_message "Looks like there's a stack called #{stack_name} that didn't create properly, I'll clean it up for you..."
+        ensure_deleted!
         flash_message "Looks like you are creating new stack #{stack_name}"
-        create!(dynamic_params)
+        create_alt!(dynamic_params)
       end
-      wait_until_ready
     end
 
     def destroy!
@@ -62,6 +77,45 @@ module KumoKeisei
 
     private
 
+    def cloudformation
+      @cloudformation ||= Aws::CloudFormation::Client.new(load_creds)
+
+    end
+
+    def load_creds
+      {
+        credentials: Aws::Credentials.new(ENV["AWS_ACCESS_KEY_ID"], ENV["AWS_SECRET_ACCESS_KEY"]),
+        region: ENV["AWS_DEFAULT_REGION"]
+      }
+    end
+
+    def ensure_deleted!
+      cloudformation.delete_stack(stack_name: stack_name)
+      cloudformation.wait_until(:stack_delete_complete, stack_name: stack_name) { |waiter| waiter.delay = 10 }
+    end
+
+    def updatable?
+      stack = cloudformation.describe_stacks(name: stack_name).first
+
+      return true if UPDATEABLE_STATUSES.include? stack.stack_status
+      return false if RECOVERABLE_STATUSES.include? stack.stack_status
+    rescue Aws::CloudFormation::Errors::ValidationError
+      false
+    end
+
+    def create_alt!(dynamic_params)
+      #fix params
+      cloudformation.create_stack(
+        stack_name: "",
+        template_body: "",
+        parameters: [],
+        capabilities: ["CAPABILITY_IAM"],
+        on_failure: "DELETE",
+      )
+
+      cloudformation.wait_until(:stack_create_complete, stack_name: stack_name) { |waiter| waiter.delay 10 }
+    end
+
     def exists?
       CloudFormationStack.exists?(stack_name)
     end
@@ -89,7 +143,7 @@ module KumoKeisei
 
     def wait_until_ready(raise_on_error=true)
       loop do
-        stack_events      = bash.execute("aws cloudformation describe-stacks --stack-name #{stack_name}")
+        stack_events = bash.execute("aws cloudformation describe-stacks --stack-name #{stack_name}")
         break if stack_events =~ /does not exist/
         last_event_status = JSON.parse(stack_events)["Stacks"].first["StackStatus"]
         if stack_ready?(last_event_status)
@@ -148,7 +202,5 @@ module KumoKeisei
       puts "------------=============================###################"
       puts "\n\n"
     end
-
-    class AwsCliError < StandardError; end
   end
 end
