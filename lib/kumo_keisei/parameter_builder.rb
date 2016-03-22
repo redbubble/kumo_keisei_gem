@@ -1,5 +1,4 @@
 require 'json'
-require 'pry-byebug'
 
 module KumoKeisei
   class ParameterBuilder
