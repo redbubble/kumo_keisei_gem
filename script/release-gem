@@ -8,7 +8,7 @@ def run_command(cmd)
   raise "non zero exit code" if $?.exitstatus != 0
 end
 
-tag = KumoKeisei::VERSION
+tag = File.read(File.expand_path('../VERSION', __FILE__)).strip
 
 run_command "git tag #{tag}"
 run_command "git push origin #{tag}"
