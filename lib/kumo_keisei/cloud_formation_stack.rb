@@ -85,7 +85,7 @@ module KumoKeisei
         on_failure: "DELETE"
       )
 
-      cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay 10 }
+      cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
     end
 
     def update!(dynamic_params={})
@@ -98,7 +98,7 @@ module KumoKeisei
         capabilities: ["CAPABILITY_IAM"]
       )
 
-      cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay 10 }
+      cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
     end
 
     def wait_until_ready(raise_on_error=true)
