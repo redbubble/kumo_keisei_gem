@@ -65,7 +65,7 @@ module KumoKeisei
     end
 
     def updatable?
-      stack = cloudformation.describe_stacks(stack_name: @stack_name).first
+      stack = cloudformation.describe_stacks(stack_name: @stack_name).stacks.first
 
       return true if UPDATEABLE_STATUSES.include? stack.stack_status
       return false if RECOVERABLE_STATUSES.include? stack.stack_status
@@ -103,7 +103,7 @@ module KumoKeisei
 
     def wait_until_ready(raise_on_error=true)
       loop do
-        stack = cloudformation.describe_stacks(stack_name: @stack_name).first
+        stack = cloudformation.describe_stacks(stack_name: @stack_name).stacks.first
 
         if stack_ready?(stack.stack_status)
           if raise_on_error && stack_operation_failed?(stack.stack_status)

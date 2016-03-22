@@ -6,7 +6,8 @@ describe KumoKeisei::CloudFormationStack do
   let(:bash) { double('bash') }
 
   def stack_result_list_with_status(status)
-    [OpenStruct.new(stack_status: status)]
+    stack = OpenStruct.new(stack_status: status)
+    OpenStruct.new(stacks: [stack])
   end
 
   let(:stack_name) { "my-stack" }
@@ -88,8 +89,7 @@ describe KumoKeisei::CloudFormationStack do
 
       context "and the stack is in ROLLBACK_COMPLETE, or ROLLBACK_FAILED" do
         it "deletes the dead stack and creates a new one" do
-          stack = double(stack_name: stack_name, stack_status: "ROLLBACK_COMPLETE")
-          allow(cloudformation).to receive(:describe_stacks).and_return([stack])
+          allow(cloudformation).to receive(:describe_stacks).and_return(stack_result_list_with_status("ROLLBACK_COMPLETE"))
 
           expect(cloudformation).to receive(:delete_stack).with(stack_name: stack_name)
           expect(cloudformation).to receive(:create_stack)
@@ -102,8 +102,7 @@ describe KumoKeisei::CloudFormationStack do
 
       context "and the stack in in UPDATE_ROLLBACK_FAILED" do
         it "should blow up" do
-          stack = double(stack_name: stack_name, stack_status: "UPDATE_ROLLBACK_FAILED")
-          allow(cloudformation).to receive(:describe_stacks).and_return([stack])
+          allow(cloudformation).to receive(:describe_stacks).and_return(stack_result_list_with_status("UPDATE_ROLLBACK_FAILED"))
 
           expect { subject.apply! }.to raise_error("Stack is in an unrecoverable state")
         end
@@ -111,8 +110,7 @@ describe KumoKeisei::CloudFormationStack do
 
       context "and the stack is busy" do
         it "should blow up" do
-          stack = double(stack_name: stack_name, stack_status: "UPDATE_IN_PROGRESS")
-          allow(cloudformation).to receive(:describe_stacks).and_return([stack])
+          allow(cloudformation).to receive(:describe_stacks).and_return(stack_result_list_with_status("UPDATE_IN_PROGRESS"))
 
           expect { subject.apply! }.to raise_error("Stack is busy, try again soon")
         end
