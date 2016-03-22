@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'kumo_keisei'
+version = File.read(File.expand_path('../VERSION', __FILE__)).strip
 
 Gem::Specification.new do |spec|
   spec.name          = "kumo_keisei"
-  spec.version       = KumoKeisei::VERSION
+  spec.version       = version
   spec.authors       = ["Redbubble"]
   spec.email         = ["delivery-engineering@redbubble.com"]
   spec.summary       = %q{A collection of utilities for dealing with AWS Cloud Formation.}
@@ -17,8 +17,8 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency 'aws-sdk', "~> 2.2.28"
+  spec.add_runtime_dependency 'aws-sdk', "~> 2.2"
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake", "~> 10.0"
-  spec.add_development_dependency "rspec"
+  spec.add_development_dependency "rspec", "~> 3.4"
 end
