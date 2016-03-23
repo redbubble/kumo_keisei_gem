@@ -32,6 +32,7 @@ describe KumoKeisei::CloudFormationStack do
 
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
+    allow(KumoKeisei::ConsoleJockey).to receive(:write_line).and_return(nil)
     allow(Aws::CloudFormation::Client).to receive(:new).and_return(cloudformation)
     allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(cf_stack)
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
@@ -80,7 +81,7 @@ describe KumoKeisei::CloudFormationStack do
               .and_return(stack_result_list_with_status(stack_status, stack_name))
 
             expect(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_raise(error)
-            expect(KumoKeisei::ConsoleJockey).to receive(:flash_message).with(/No changes need to be applied/)
+            expect(KumoKeisei::ConsoleJockey).to receive(:flash_message).with(/Stack name: #{stack_name}/)
 
             subject.apply!
           end
@@ -113,8 +114,8 @@ describe KumoKeisei::CloudFormationStack do
           error = Aws::Waiters::Errors::UnexpectedError.new(RuntimeError.new("Stack with id #{stack_name} does not exist"))
           allow(cloudformation).to receive(:wait_until).with(:stack_create_complete, stack_name: stack_name).and_raise(error)
 
-          expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with(/There was an error during stack creation for #{stack_name}, and the stack has been cleaned up./)
-          subject.apply!
+          expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with(/There was an error during stack creation for #{stack_name}, and the stack has been cleaned up./).and_return nil
+          expect { subject.apply! }.to raise_error(KumoKeisei::CloudFormationStack::CreateError)
         end
       end
 

@@ -5,6 +5,8 @@ require_relative "console_jockey"
 
 module KumoKeisei
   class CloudFormationStack
+    class CreateError < StandardError; end
+    
     UPDATEABLE_STATUSES = [
       'UPDATE_ROLLBACK_COMPLETE',
       'CREATE_COMPLETE',
@@ -27,15 +29,17 @@ module KumoKeisei
       @stack_name = stack_name
       @stack_template = stack_template
       @stack_params_filepath = stack_params_filepath
+
+      flash_message "Stack name: #{stack_name}"
     end
 
     def apply!(dynamic_params={})
       if updatable?
         update!(dynamic_params)
       else
-        flash_message "Looks like there's a stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
+        ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
         ensure_deleted!
-        flash_message "Looks like you are creating new stack #{@stack_name}"
+        ConsoleJockey.write_line "Creating your new stack #{@stack_name}"
         create!(dynamic_params)
       end
     end
@@ -107,9 +111,7 @@ module KumoKeisei
       begin
         cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
       rescue Aws::Waiters::Errors::UnexpectedError => ex
-        raise ex unless ex.message =~ /does not exist/
-
-        ConsoleJockey.write_line "There was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
+        handle_unexpected_error(ex)
       end
     end
 
@@ -127,7 +129,7 @@ module KumoKeisei
       cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
     rescue Aws::CloudFormation::Errors::ValidationError => ex
       raise ex unless ex.message == "No updates are to be performed."
-      flash_message "No changes need to be applied for #{@stack_name}."
+      ConsoleJockey.write_line "No changes need to be applied for #{@stack_name}."
     end
 
     def wait_until_ready(raise_on_error=true)
@@ -154,6 +156,15 @@ module KumoKeisei
 
     def stack_operation_failed?(last_event_status)
       last_event_status =~ /ROLLBACK/
+    end
+
+    def handle_unexpected_error(error)
+      if error.message =~ /does not exist/
+        ConsoleJockey.write_line "There was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
+        raise CreateError.new("There was an error during stack creation. The stack has been deleted.")
+      else
+        raise error
+      end
     end
 
     def flash_message(message)
