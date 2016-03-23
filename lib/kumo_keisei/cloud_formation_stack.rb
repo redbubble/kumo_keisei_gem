@@ -95,8 +95,8 @@ module KumoKeisei
 
       return true if UPDATEABLE_STATUSES.include? stack.stack_status
       return false if RECOVERABLE_STATUSES.include? stack.stack_status
-      raise "Stack is in an unrecoverable state" if UNRECOVERABLE_STATUSES.include? stack.stack_status
-      raise "Stack is busy, try again soon"
+      raise UpdateError.new("Stack is in an unrecoverable state") if UNRECOVERABLE_STATUSES.include? stack.stack_status
+      raise UpdateError.new("Stack is busy, try again soon")
     rescue Aws::CloudFormation::Errors::ValidationError
       false
     end
@@ -172,7 +172,6 @@ module KumoKeisei
     def handle_unexpected_error(error)
       if error.message =~ /does not exist/
         ConsoleJockey.write_line "There was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
-        ConsoleJockey.write_line "Find error details in the AWS CloudFormation console: #{stack_events_url}"
         raise CreateError.new("There was an error during stack creation. The stack has been deleted.")
       else
         raise error
