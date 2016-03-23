@@ -135,7 +135,12 @@ module KumoKeisei
       ConsoleJockey.write_line "No changes need to be applied for #{@stack_name}."
     rescue Aws::Waiters::Errors::FailureStateError => ex
       ConsoleJockey.write_line "Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates."
+      ConsoleJockey.write_line "Find error details in the AWS CloudFormation console: #{stack_events_url}"
       raise UpdateError.new("Stack update failed for #{@stack_name}.")
+    end
+
+    def stack_events_url
+      "https://console.aws.amazon.com/cloudformation/home?region=#{ENV['AWS_DEFAULT_REGION']}#/stacks?filter=active&tab=events&stackId=#{get_stack.stack_id}"
     end
 
     def wait_until_ready(raise_on_error=true)
