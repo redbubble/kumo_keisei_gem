@@ -1,154 +1,185 @@
-require "json"
-require 'shellwords'
+require 'aws-sdk'
 
-require_relative "bash"
+require_relative "parameter_builder"
+require_relative "console_jockey"
 
 module KumoKeisei
-
   class CloudFormationStack
-    class ParseError < StandardError; end
+    class CreateError < StandardError; end
+    class UpdateError < StandardError; end
 
-    attr_reader :stack_name, :bash
+    UPDATEABLE_STATUSES = [
+      'UPDATE_ROLLBACK_COMPLETE',
+      'CREATE_COMPLETE',
+      'UPDATE_COMPLETE',
+      'DELETE_COMPLETE'
+    ]
 
-    def self.exists?(stack_name)
-      Bash.new.exit_status_for("aws cloudformation describe-stack-resources --stack-name #{stack_name}") == 0
-    end
+    RECOVERABLE_STATUSES = [
+      'ROLLBACK_COMPLETE',
+      'ROLLBACK_FAILED'
+    ]
+
+    UNRECOVERABLE_STATUSES = [
+      'UPDATE_ROLLBACK_FAILED'
+    ]
+
+    attr_reader :stack_name
 
     def initialize(stack_name, stack_template, stack_params_filepath = nil)
       @stack_name = stack_name
       @stack_template = stack_template
       @stack_params_filepath = stack_params_filepath
-      @bash = Bash.new
+
+      flash_message "Stack name: #{stack_name}"
     end
 
     def apply!(dynamic_params={})
-      if exists?
+      if updatable?
         update!(dynamic_params)
       else
-        flash_message "Looks like you are creating new stack #{stack_name}"
+        ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
+        ensure_deleted!
+        ConsoleJockey.write_line "Creating your new stack #{@stack_name}"
         create!(dynamic_params)
       end
-      wait_until_ready
     end
 
     def destroy!
       wait_until_ready(false)
-      run_command("aws cloudformation delete-stack --stack-name #{stack_name}") do |response, exit_status|
-        if exit_status > 0
-          puts response
-          raise AwsCliError.new response
-        end
-      end
-      wait_until_ready
+      ensure_deleted!
     end
 
-    def logical_resource(name)
-      app_resource_description = bash.execute("aws cloudformation describe-stack-resource --stack-name=#{@stack_name} --logical-resource-id=#{name}")
-      JSON.parse(app_resource_description)["StackResourceDetail"]
+    def outputs(output)
+      outputs_hash = get_stack.outputs.reduce({}) { |acc, o| acc.merge(o.output_key.to_s => o.output_value) }
+
+      outputs_hash[output]
     end
 
-    def fetch_param(param_key)
-      stack_response = bash.execute("aws cloudformation describe-stacks --stack-name=#{@stack_name}")
-      param = JSON.parse(stack_response)["Stacks"].first["Parameters"].find { |param| param["ParameterKey"] == param_key } rescue raise(ParseError, "Could not parse response from AWS: #{stack_response}")
-      param ? param["ParameterValue"] : nil
-    end
-
-    def outputs(key)
-      stacks_json = bash.execute("aws cloudformation describe-stacks --stack-name=#{@stack_name}")
-      outputs = JSON.parse(stacks_json)["Stacks"].first["Outputs"]
-      entry = outputs.find { |e| e["OutputKey"] == key }
-      entry["OutputValue"]
+    def logical_resource(resource_name)
+      response = cloudformation.describe_stack_resource(stack_name: @stack_name, logical_resource_id: resource_name)
+      stack_resource = response.stack_resources.find {|resource| resource.logical_resource_id == resource_name }
+      stack_resource.each_pair.reduce({}) {|acc, (k, v)| acc.merge(transform_logical_resource_id(k) => v) }
     end
 
     private
 
-    def exists?
-      CloudFormationStack.exists?(stack_name)
+    def transform_logical_resource_id(id)
+      id.to_s.split('_').map {|w| w.capitalize }.join
+    end
+
+    def get_stack(options={})
+      @stack = nil if options[:dump_cache]
+
+      @stack ||= cloudformation.describe_stacks(stack_name: @stack_name).stacks.find { |stack| stack.stack_name == @stack_name }
+    end
+
+    def cloudformation
+      @cloudformation ||= Aws::CloudFormation::Client.new(load_creds)
+    end
+
+    def load_creds
+      {
+        credentials: Aws::Credentials.new(ENV["AWS_ACCESS_KEY_ID"], ENV["AWS_SECRET_ACCESS_KEY"]),
+        region: ENV["AWS_DEFAULT_REGION"]
+      }
+    end
+
+    def ensure_deleted!
+      cloudformation.delete_stack(stack_name: @stack_name)
+      cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+    end
+
+    def updatable?
+      stack = get_stack
+
+      return true if UPDATEABLE_STATUSES.include? stack.stack_status
+      return false if RECOVERABLE_STATUSES.include? stack.stack_status
+      raise UpdateError.new("Stack is in an unrecoverable state") if UNRECOVERABLE_STATUSES.include? stack.stack_status
+      raise UpdateError.new("Stack is busy, try again soon")
+    rescue Aws::CloudFormation::Errors::ValidationError
+      false
+    end
+
+    def create!(dynamic_params)
+      cloudformation_params = ParameterBuilder.new(dynamic_params, @stack_params_filepath).params
+      cloudformation.create_stack(
+        stack_name: @stack_name,
+        template_body: File.read(@stack_template),
+        parameters: cloudformation_params,
+        capabilities: ["CAPABILITY_IAM"],
+        on_failure: "DELETE"
+      )
+
+      begin
+        cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+      rescue Aws::Waiters::Errors::UnexpectedError => ex
+        handle_unexpected_error(ex)
+      end
     end
 
     def update!(dynamic_params={})
+      cloudformation_params = ParameterBuilder.new(dynamic_params, @stack_params_filepath).params
       wait_until_ready(false)
-      run_command("aws cloudformation update-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@stack_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
-        if exit_status > 0
-          if response =~ /No updates are to be performed/
-            puts "No updates are to be performed"
-            return
-          end
-          puts response
-          raise AwsCliError.new response
-        end
-      end
+
+      cloudformation.update_stack(
+        stack_name: @stack_name,
+        template_body: File.read(@stack_template),
+        parameters: cloudformation_params,
+        capabilities: ["CAPABILITY_IAM"]
+      )
+
+      cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+    rescue Aws::CloudFormation::Errors::ValidationError => ex
+      raise ex unless ex.message == "No updates are to be performed."
+      ConsoleJockey.write_line "No changes need to be applied for #{@stack_name}."
+    rescue Aws::Waiters::Errors::FailureStateError => ex
+      ConsoleJockey.write_line "Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates."
+      ConsoleJockey.write_line "Find error details in the AWS CloudFormation console: #{stack_events_url}"
+      raise UpdateError.new("Stack update failed for #{@stack_name}.")
     end
 
-    def create!(dynamic_params={})
-      run_command("aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name #{stack_name} --template-body file://#{@stack_template} #{command_line_params(dynamic_params)}") do |response, exit_status|
-        puts response
-        raise AwsCliError.new response unless exit_status == 0
-      end
+    def stack_events_url
+      "https://console.aws.amazon.com/cloudformation/home?region=#{ENV['AWS_DEFAULT_REGION']}#/stacks?filter=active&tab=events&stackId=#{get_stack.stack_id}"
     end
 
     def wait_until_ready(raise_on_error=true)
       loop do
-        stack_events      = bash.execute("aws cloudformation describe-stacks --stack-name #{stack_name}")
-        break if stack_events =~ /does not exist/
-        last_event_status = JSON.parse(stack_events)["Stacks"].first["StackStatus"]
-        if stack_ready?(last_event_status)
-          if raise_on_error && stack_failed?(last_event_status)
-            raise last_event_status
+        stack = get_stack(dump_cache: true)
+
+        if stack_ready?(stack.stack_status)
+          if raise_on_error && stack_operation_failed?(stack.stack_status)
+            raise stack.stack_status
           end
+
           break
         end
-        puts "waiting for #{stack_name} to be READY, current: #{last_event_status}"
-        sleep 1
+        puts "waiting for #{@stack_name} to be READY, current: #{last_event_status}"
+        sleep 10
       end
+    rescue Aws::CloudFormation::Errors::ValidationError
+      nil
     end
 
     def stack_ready?(last_event_status)
       last_event_status =~ /COMPLETE/ || last_event_status =~ /ROLLBACK_FAILED/
     end
 
-    def stack_failed?(last_event_status)
+    def stack_operation_failed?(last_event_status)
       last_event_status =~ /ROLLBACK/
     end
 
-    def run_command(command, &block)
-      puts command
-      puts bash.execute(command.strip, &block)
-    end
-
-    def command_line_params(dynamic_params = {})
-      params = file_params.merge(dynamic_params).map do |key, value|
-        {
-         "ParameterKey" => key,
-         "ParameterValue" => value
-        }
-      end
-
-      return "" if params.empty?
-
-      parameters_string = Shellwords.escape(params.to_json)
-       "--parameters #{parameters_string}"
-    end
-
-    def file_params
-      return {} unless (@stack_params_filepath && File.exist?(@stack_params_filepath))
-      file = File.read(@stack_params_filepath)
-      json = JSON.parse(file)
-
-      json.reduce({}) do |acc, item|
-        acc[item['ParameterKey'].to_sym] = item['ParameterValue']
-        acc
+    def handle_unexpected_error(error)
+      if error.message =~ /does not exist/
+        ConsoleJockey.write_line "There was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
+        raise CreateError.new("There was an error during stack creation. The stack has been deleted.")
+      else
+        raise error
       end
     end
 
     def flash_message(message)
-      puts "\n\n"
-      puts "###################=============================------------"
-      puts message
-      puts "------------=============================###################"
-      puts "\n\n"
+      ConsoleJockey.flash_message(message)
     end
-
-    class AwsCliError < StandardError; end
   end
 end
