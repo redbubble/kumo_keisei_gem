@@ -84,7 +84,13 @@ module KumoKeisei
         on_failure: "DELETE"
       )
 
-      cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+      begin
+        cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+      rescue Aws::Waiters::Errors::UnexpectedError => ex
+        raise ex unless ex.message =~ /does not exist/
+
+        ConsoleJockey.write_line "Looks like there was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
+      end
     end
 
     def update!(dynamic_params={})

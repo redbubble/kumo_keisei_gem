@@ -104,6 +104,18 @@ describe KumoKeisei::CloudFormationStack do
           expect(cloudformation).to receive(:create_stack).with(cf_stack_create_params)
           subject.apply!
         end
+
+        it "shows a friendly error message if the stack had issues during creation" do
+          allow(cloudformation).to receive(:delete_stack)
+          allow(cloudformation).to receive(:describe_stacks).with(stack_name: stack_name).and_raise(Aws::CloudFormation::Errors::ValidationError.new('',''))
+          allow(cloudformation).to receive(:create_stack).with(cf_stack_create_params)
+
+          error = Aws::Waiters::Errors::UnexpectedError.new(RuntimeError.new("Stack with id #{stack_name} does not exist"))
+          allow(cloudformation).to receive(:wait_until).with(:stack_create_complete, stack_name: stack_name).and_raise(error)
+
+          expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with(/Looks like there was an error during stack creation for #{stack_name}, and the stack has been cleaned up./)
+          subject.apply!
+        end
       end
 
       context "and the stack is in ROLLBACK_COMPLETE, or ROLLBACK_FAILED" do

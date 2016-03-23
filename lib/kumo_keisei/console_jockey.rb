@@ -7,5 +7,9 @@ module KumoKeisei
       puts "------------=============================###################"
       puts "\n\n"
     end
+
+    def self.write_line(message)
+      puts message
+    end
   end
 end
