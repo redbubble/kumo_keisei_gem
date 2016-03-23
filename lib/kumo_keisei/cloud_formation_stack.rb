@@ -6,7 +6,8 @@ require_relative "console_jockey"
 module KumoKeisei
   class CloudFormationStack
     class CreateError < StandardError; end
-    
+    class UpdateError < StandardError; end
+
     UPDATEABLE_STATUSES = [
       'UPDATE_ROLLBACK_COMPLETE',
       'CREATE_COMPLETE',
@@ -67,7 +68,9 @@ module KumoKeisei
       id.to_s.split('_').map {|w| w.capitalize }.join
     end
 
-    def get_stack
+    def get_stack(options)
+      @stack = nil if options[:dump_cache]
+
       @stack ||= cloudformation.describe_stacks(stack_name: @stack_name).stacks.find { |stack| stack.stack_name == @stack_name }
     end
 
@@ -130,11 +133,14 @@ module KumoKeisei
     rescue Aws::CloudFormation::Errors::ValidationError => ex
       raise ex unless ex.message == "No updates are to be performed."
       ConsoleJockey.write_line "No changes need to be applied for #{@stack_name}."
+    rescue Aws::Waiters::Errors::FailureStateError => ex
+      ConsoleJockey.write_line "Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates."
+      raise UpdateError.new("Stack update failed for #{@stack_name}.")
     end
 
     def wait_until_ready(raise_on_error=true)
       loop do
-        stack = get_stack
+        stack = get_stack(dump_cache: true)
 
         if stack_ready?(stack.stack_status)
           if raise_on_error && stack_operation_failed?(stack.stack_status)

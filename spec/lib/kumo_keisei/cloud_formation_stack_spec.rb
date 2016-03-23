@@ -69,6 +69,17 @@ describe KumoKeisei::CloudFormationStack do
             subject.apply!
           end
         end
+
+        it "politely informs the user of any failures" do
+          allow(cloudformation).to receive(:wait_until)
+            .with(:stack_update_complete, stack_name: stack_name)
+            .and_raise(Aws::Waiters::Errors::FailureStateError.new(""))
+
+          allow(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_return("stack_id")
+          expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with("Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates.")
+
+          expect { subject.apply! }.to raise_error(KumoKeisei::CloudFormationStack::UpdateError)
+        end
       end
 
       context "when the stack has not changed" do
