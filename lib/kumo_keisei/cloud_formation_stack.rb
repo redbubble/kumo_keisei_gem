@@ -45,7 +45,27 @@ module KumoKeisei
       ensure_deleted!
     end
 
+    def outputs(output)
+      outputs_hash = get_stack.outputs.reduce({}) { |acc, o| acc.merge(o.output_key.to_s => o.output_value) }
+
+      outputs_hash[output]
+    end
+
+    def logical_resource(resource_name)
+      response = cloudformation.describe_stack_resource(stack_name: @stack_name, logical_resource_id: resource_name)
+      stack_resource = response.stack_resources.find {|resource| resource.logical_resource_id == resource_name }
+      stack_resource.each_pair.reduce({}) {|acc, (k, v)| acc.merge(transform_logical_resource_id(k) => v) }
+    end
+
     private
+
+    def transform_logical_resource_id(id)
+      id.to_s.split('_').map {|w| w.capitalize }.join
+    end
+
+    def get_stack
+      @stack ||= cloudformation.describe_stacks(stack_name: @stack_name).stacks.find { |stack| stack.stack_name == @stack_name }
+    end
 
     def cloudformation
       @cloudformation ||= Aws::CloudFormation::Client.new(load_creds)
@@ -64,7 +84,7 @@ module KumoKeisei
     end
 
     def updatable?
-      stack = cloudformation.describe_stacks(stack_name: @stack_name).stacks.first
+      stack = get_stack
 
       return true if UPDATEABLE_STATUSES.include? stack.stack_status
       return false if RECOVERABLE_STATUSES.include? stack.stack_status
@@ -89,7 +109,7 @@ module KumoKeisei
       rescue Aws::Waiters::Errors::UnexpectedError => ex
         raise ex unless ex.message =~ /does not exist/
 
-        ConsoleJockey.write_line "Looks like there was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
+        ConsoleJockey.write_line "There was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
       end
     end
 
@@ -107,12 +127,12 @@ module KumoKeisei
       cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
     rescue Aws::CloudFormation::Errors::ValidationError => ex
       raise ex unless ex.message == "No updates are to be performed."
-      flash_message "No changes need to be applied."
+      flash_message "No changes need to be applied for #{@stack_name}."
     end
 
     def wait_until_ready(raise_on_error=true)
       loop do
-        stack = cloudformation.describe_stacks(stack_name: @stack_name).stacks.first
+        stack = get_stack
 
         if stack_ready?(stack.stack_status)
           if raise_on_error && stack_operation_failed?(stack.stack_status)
