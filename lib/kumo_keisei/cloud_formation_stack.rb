@@ -68,7 +68,7 @@ module KumoKeisei
       id.to_s.split('_').map {|w| w.capitalize }.join
     end
 
-    def get_stack(options)
+    def get_stack(options={})
       @stack = nil if options[:dump_cache]
 
       @stack ||= cloudformation.describe_stacks(stack_name: @stack_name).stacks.find { |stack| stack.stack_name == @stack_name }
