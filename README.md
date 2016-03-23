@@ -32,10 +32,6 @@ KumoKeisei::CloudFormationStack.new(stack_name, template, template_params).apply
 
 ## Dependencies
 
-#### AWS CLI
-
-This gem requires the aws cli to be installed. If you don't have it, it won't work!!
-
 #### Ruby Versions
 
 This gem is tested with Ruby (MRI) versions 1.9.3 and 2.2.3.
@@ -52,3 +48,14 @@ This gem is tested with Ruby (MRI) versions 1.9.3 and 2.2.3.
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a new Pull Request
+
+## Testing changes
+
+Changes to the gem can be manually tested end to end in a project that uses the gem (i.e. http-wala).
+
+1. First start the dev-tools container: `baxter kumo tools debug non-production`
+1. Re-install the gem: `gem specific_install https://github.com/redbubble/kumo_keisei_gem.git -b <your_branch>`
+1. Fire up a console: `irb`
+1. Require the gem: `require "kumo_keisei"`
+1. Interact with the gem's classes. `KumoKeisei::CloudFormationStack.new(...).apply!`
+
