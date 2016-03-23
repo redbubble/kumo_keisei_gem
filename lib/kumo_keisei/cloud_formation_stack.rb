@@ -1,8 +1,7 @@
-require "json"
-require 'shellwords'
 require 'aws-sdk'
 
 require_relative "parameter_builder"
+require_relative "console_jockey"
 
 module KumoKeisei
   class CloudFormationStack
@@ -91,6 +90,7 @@ module KumoKeisei
     def update!(dynamic_params={})
       cloudformation_params = ParameterBuilder.new(dynamic_params, @stack_params_filepath).params
       wait_until_ready(false)
+
       cloudformation.update_stack(
         stack_name: @stack_name,
         template_body: File.read(@stack_template),
@@ -99,6 +99,9 @@ module KumoKeisei
       )
 
       cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+    rescue Aws::CloudFormation::Errors::ValidationError => ex
+      raise ex unless ex.message == "No updates are to be performed."
+      flash_message "No changes need to be applied."
     end
 
     def wait_until_ready(raise_on_error=true)
@@ -127,17 +130,8 @@ module KumoKeisei
       last_event_status =~ /ROLLBACK/
     end
 
-    def run_command(command, &block)
-      puts command
-      puts bash.execute(command.strip, &block)
-    end
-
     def flash_message(message)
-      puts "\n\n"
-      puts "###################=============================------------"
-      puts message
-      puts "------------=============================###################"
-      puts "\n\n"
+      ConsoleJockey.flash_message(message)
     end
   end
 end

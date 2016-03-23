@@ -3,8 +3,6 @@ require 'ostruct'
 
 describe KumoKeisei::CloudFormationStack do
 
-  let(:bash) { double('bash') }
-
   def stack_result_list_with_status(status)
     stack = OpenStruct.new(stack_status: status)
     OpenStruct.new(stacks: [stack])
@@ -33,7 +31,7 @@ describe KumoKeisei::CloudFormationStack do
   subject(:instance) { KumoKeisei::CloudFormationStack.new(stack_name, stack_template_path, file_params_path) }
 
   before do
-    allow(subject).to receive(:flash_message)
+    allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
     allow(Aws::CloudFormation::Client).to receive(:new).and_return(cloudformation)
     allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(cf_stack)
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
@@ -53,18 +51,39 @@ describe KumoKeisei::CloudFormationStack do
 
   describe "#apply!" do
     context "when the stack is updatable" do
-      before do
-        allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name).and_return(nil)
+      UPDATEABLE_STATUSES = ['UPDATE_ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE', 'DELETE_COMPLETE']
+
+      context "when the stack has changed" do
+        before do
+          allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name).and_return(nil)
+        end
+
+        UPDATEABLE_STATUSES.each do |stack_status|
+          it "updates the stack when in #{stack_status} status" do
+            allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(
+              stack_result_list_with_status(stack_status),
+              stack_result_list_with_status("UPDATE_COMPLETE")
+            )
+            expect(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_return("stack_id")
+            subject.apply!
+          end
+        end
       end
 
-      ['UPDATE_ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE', 'DELETE_COMPLETE'].each do |stack_status| 
-        it "updates the stack when in #{stack_status} status" do
-          allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(
-            stack_result_list_with_status(stack_status),
-            stack_result_list_with_status("UPDATE_COMPLETE")
-          )
-          expect(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_return("stack_id")
-          subject.apply!
+      context "when the stack has not changed" do
+        let(:error) { Aws::CloudFormation::Errors::ValidationError.new('', 'No updates are to be performed.') }
+
+        UPDATEABLE_STATUSES.each do |stack_status|
+          it "reports that nothing has changed when in #{stack_status} status" do
+            allow(cloudformation).to receive(:describe_stacks)
+              .with({stack_name: stack_name})
+              .and_return(stack_result_list_with_status(stack_status))
+
+            expect(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_raise(error)
+            expect(KumoKeisei::ConsoleJockey).to receive(:flash_message).with(/No changes need to be applied/)
+
+            subject.apply!
+          end
         end
       end
     end
