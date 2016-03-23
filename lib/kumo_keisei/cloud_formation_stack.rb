@@ -172,6 +172,7 @@ module KumoKeisei
     def handle_unexpected_error(error)
       if error.message =~ /does not exist/
         ConsoleJockey.write_line "There was an error during stack creation for #{@stack_name}, and the stack has been cleaned up."
+        ConsoleJockey.write_line "Find error details in the AWS CloudFormation console: #{stack_events_url}"
         raise CreateError.new("There was an error during stack creation. The stack has been deleted.")
       else
         raise error
