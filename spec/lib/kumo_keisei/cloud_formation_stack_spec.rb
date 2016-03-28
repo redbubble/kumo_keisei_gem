@@ -173,7 +173,7 @@ describe KumoKeisei::CloudFormationStack do
 
     describe "#logical_resource" do
       let(:stack_resource_detail) { OpenStruct.new(logical_resource_id: "with-a-fox", physical_resource_id: "i-am-sam",  resource_type: "green-eggs-and-ham")}
-      let(:response) { double(:response, stack_resource_detail: [stack_resource_detail]) }
+      let(:response) { double(:response, stack_resource_detail: stack_resource_detail) }
       let(:stack_resource_name) { "with-a-fox" }
 
       it "returns a hash of the stack resource detail params" do
