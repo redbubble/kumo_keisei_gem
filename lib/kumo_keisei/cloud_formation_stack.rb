@@ -58,7 +58,7 @@ module KumoKeisei
 
     def logical_resource(resource_name)
       response = cloudformation.describe_stack_resource(stack_name: @stack_name, logical_resource_id: resource_name)
-      stack_resource = response.stack_resources.find {|resource| resource.logical_resource_id == resource_name }
+      stack_resource = response.stack_resource_detail.find {|resource| resource.logical_resource_id == resource_name }
       stack_resource.each_pair.reduce({}) {|acc, (k, v)| acc.merge(transform_logical_resource_id(k) => v) }
     end
 
