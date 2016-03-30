@@ -87,7 +87,7 @@ module KumoKeisei
 
     def ensure_deleted!
       cloudformation.delete_stack(stack_name: @stack_name)
-      cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+      cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = 20; waiter.max_attempts = 45 }
     end
 
     def updatable?
@@ -112,7 +112,7 @@ module KumoKeisei
       )
 
       begin
-        cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+        cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 20; waiter.max_attempts = 45 }
       rescue Aws::Waiters::Errors::UnexpectedError => ex
         handle_unexpected_error(ex)
       end
@@ -129,7 +129,7 @@ module KumoKeisei
         capabilities: ["CAPABILITY_IAM"]
       )
 
-      cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 10 }
+      cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 20; waiter.max_attempts = 45 }
     rescue Aws::CloudFormation::Errors::ValidationError => ex
       raise ex unless ex.message == "No updates are to be performed."
       ConsoleJockey.write_line "No changes need to be applied for #{@stack_name}."
