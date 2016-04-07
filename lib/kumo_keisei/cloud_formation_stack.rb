@@ -26,6 +26,10 @@ module KumoKeisei
 
     attr_reader :stack_name
 
+    def self.exists?(stack_name)
+      self.new(stack_name, nil).exists?
+    end
+
     def initialize(stack_name, stack_template, stack_params_filepath = nil)
       @stack_name = stack_name
       @stack_template = stack_template
@@ -60,6 +64,10 @@ module KumoKeisei
       response = cloudformation.describe_stack_resource(stack_name: @stack_name, logical_resource_id: resource_name)
       stack_resource = response.stack_resource_detail
       stack_resource.each_pair.reduce({}) {|acc, (k, v)| acc.merge(transform_logical_resource_id(k) => v) }
+    end
+
+    def exists?
+      !get_stack.nil?
     end
 
     private
