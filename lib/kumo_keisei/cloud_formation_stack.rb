@@ -83,14 +83,7 @@ module KumoKeisei
     end
 
     def cloudformation
-      @cloudformation ||= Aws::CloudFormation::Client.new(load_creds)
-    end
-
-    def load_creds
-      {
-        credentials: Aws::Credentials.new(ENV["AWS_ACCESS_KEY_ID"], ENV["AWS_SECRET_ACCESS_KEY"]),
-        region: ENV["AWS_DEFAULT_REGION"]
-      }
+      @cloudformation ||= Aws::CloudFormation::Client.new
     end
 
     def ensure_deleted!
