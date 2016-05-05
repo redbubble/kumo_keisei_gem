@@ -82,16 +82,6 @@ class KumoKeisei::EnvironmentConfig
     params_data.flat_map { |name, value| { parameter_key: name, parameter_value: value } }
   end
 
-  def stack_file_params_file_path(stack_name)
-    "/tmp/tutum_cf_file_params_stack_#{stack_name}"
-  end
-
-  def write_stack_params_file(params_file_json, stack_name)
-    File.open(stack_file_params_file_path(stack_name), "w+") do |f|
-      f.write(params_file_json)
-    end
-  end
-
   def params_template(stack_name)
     stack_template_filepath = File.expand_path(File.join("..", "..", "env", "cloudformation", "#{stack_name}.yml.erb"), __FILE__)
     File.read(stack_template_filepath)
@@ -131,10 +121,6 @@ class KumoKeisei::EnvironmentConfig
     filepath
   end
 
-  def env_config_name
-    "#{env_name}.yml"
-  end
-
   def common_config_path
     File.join(@config_dir_path, "common.yml")
   end
@@ -147,16 +133,30 @@ class KumoKeisei::EnvironmentConfig
     File.basename config_path
   end
 
-  def encrypted_secrets
-    return {} unless File.exist?(encrypted_secrets_path)
-    @encrypted_secrets ||= YAML.load(ERB.new(File.read(encrypted_secrets_path)).result(get_binding))
+  def env_config_file_name
+    "#{env_name}.yml"
   end
 
+  def env_secrets_file_name
+    "#{env_name}_secrets.yml"
+  end
+
+  def encrypted_secrets
+    encrypted_common_secrets.merge(encrypted_env_secrets)
+  end
+
+  def encrypted_common_secrets
+    @file_loader.load_config('common_secrets.yml')
+  end
+
+  def encrypted_env_secrets
+    @file_loader.load_config(env_secrets_file_name)
+  end
   def common_config
     @file_loader.load_config('common.yml')
   end
 
   def raw_config
-    @file_loader.load_config(env_config_name)
+    @file_loader.load_config(env_config_file_name)
   end
 end
