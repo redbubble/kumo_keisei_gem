@@ -6,13 +6,16 @@ describe KumoKeisei::EnvironmentConfig do
   let(:options) do
     {
       env_name: env_name,
-      config_dir_path: config_dir_path
+      config_dir_path: config_dir_path,
+      params_template_file_path: params_template_file_path
     }
   end
   let(:file_loader) { instance_double(KumoKeisei::FileLoader) }
   let(:parameter_template) { "stack_name: <%= config['stack_name'] %>" }
+  let(:params_template_file_path) { '/junk.txt' }
   let(:environment_config_file_name) { "#{env_name}.yml" }
   let(:kms) { instance_double(KumoKi::KMS) }
+  let(:logger) { double(:test_logger, debug: nil) }
 
   before do
     allow(File).to receive(:read).and_return(parameter_template)
@@ -22,8 +25,7 @@ describe KumoKeisei::EnvironmentConfig do
 
   describe '#cf_params' do
     #TODO: parameterise the params template file path
-
-    subject { described_class.new(options).cf_params }
+    subject { described_class.new(options, logger).cf_params }
 
     context 'no params' do
       let(:parameter_template) { '' }
@@ -38,6 +40,11 @@ describe KumoKeisei::EnvironmentConfig do
 
       it 'creates a array containing an aws formatted parameter hash' do
         expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: "parameter_value"}])
+      end
+
+      it 'reads the specified template file' do
+        expect(File).to receive(:read).with('/junk.txt')
+        subject
       end
     end
 
@@ -56,7 +63,7 @@ describe KumoKeisei::EnvironmentConfig do
   end
 
   describe "#config" do
-    subject { described_class.new(options).config }
+    subject { described_class.new(options, logger).config }
 
     context 'common config' do
       let(:common_parameters) { { "stack_name" => "okonomiyaki" } }
@@ -87,7 +94,7 @@ describe KumoKeisei::EnvironmentConfig do
   end
 
   describe "#plain_text_secrets" do
-    subject { described_class.new(options).plain_text_secrets }
+    subject { described_class.new(options, logger).plain_text_secrets }
 
     let(:crypted_password) { 'lookatmyencryptedpasswords' }
     let(:plain_text_password) { 'plain_text_password' }

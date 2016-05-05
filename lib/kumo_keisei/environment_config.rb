@@ -13,6 +13,7 @@ class KumoKeisei::EnvironmentConfig
     @app_name = options[:app_name]
     @env_name = options[:env_name]
     @config_dir_path = options[:config_dir_path]
+    @params_template_file_path = options[:params_template_file_path]
     @file_loader = KumoKeisei::FileLoader.new(options)
 
     @log = logger
@@ -20,18 +21,6 @@ class KumoKeisei::EnvironmentConfig
 
   def get_binding
     binding
-  end
-
-  def stack_name
-    "#{app_name}-#{env_name}"
-  end
-
-  def set_cf_stack(name, stack)
-    @cf_stacks[name.to_sym] = stack
-  end
-
-  def deploy_tag
-    production? ? "production" : "non-production"
   end
 
   def production?
@@ -43,36 +32,24 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def plain_text_secrets
-    @plain_text_secrets ||= decrypt_secrets(
-      encrypted_secrets,
-      encrypted_secrets_filename,
-    )
+    @plain_text_secrets ||= decrypt_secrets(encrypted_secrets)
   end
 
   def config
-    @config ||= common_config.merge(raw_config)
-  end
-
-  def tags
-    [deploy_tag]
-  end
-
-  def vpc_id
-    @cf_stacks[:vpc].outputs('VpcId')
-  end
-
-  def vpc_subnets
-    @cf_stacks[:vpc].outputs('SubnetIds')
+    @config ||= common_config.merge(env_config)
   end
 
   def cf_params
-    params_template = params_template('lol')
     return [] if params_template.empty?
 
     cf_params_json(get_stack_params(params_template))
   end
 
   private
+
+  def kms
+    @kms ||= KumoKi::KMS.new
+  end
 
   def get_stack_params(params_template)
     YAML.load(ERB.new(params_template).result(get_binding))
@@ -82,16 +59,11 @@ class KumoKeisei::EnvironmentConfig
     params_data.flat_map { |name, value| { parameter_key: name, parameter_value: value } }
   end
 
-  def params_template(stack_name)
-    stack_template_filepath = File.expand_path(File.join("..", "..", "env", "cloudformation", "#{stack_name}.yml.erb"), __FILE__)
-    File.read(stack_template_filepath)
+  def params_template
+    File.read(@params_template_file_path)
   end
 
-  def kms
-    @kms ||= KumoKi::KMS.new
-  end
-
-  def decrypt_secrets(secrets, filename)
+  def decrypt_secrets(secrets)
     Hash[
       secrets.map do |name, cipher_text|
         @log.debug "Decrypting '#{name}'"
@@ -99,7 +71,7 @@ class KumoKeisei::EnvironmentConfig
           begin
             [name, "#{kms.decrypt cipher_text[5,cipher_text.size]}"]
           rescue
-            @log.error "Error decrypting secret '#{name}' from '#{filename}'"
+            @log.error "Error decrypting secret '#{name}'"
             raise
           end
         else
@@ -107,30 +79,6 @@ class KumoKeisei::EnvironmentConfig
         end
       end
     ]
-  end
-
-  def encrypted_secrets_path
-    filepath = File.join(@config_dir_path, "#{env_name}_secrets.yml")
-    filepath = File.join(@config_dir_path, "development_secrets.yml") unless File.exist?(filepath)
-    filepath
-  end
-
-  def raw_config_path
-    filepath = File.join(@config_dir_path, "#{env_name}.yml")
-    filepath = File.join(@config_dir_path, "development.yml") unless File.exist?(filepath)
-    filepath
-  end
-
-  def common_config_path
-    File.join(@config_dir_path, "common.yml")
-  end
-
-  def encrypted_secrets_filename
-    File.basename encrypted_secrets_path
-  end
-
-  def config_filename
-    File.basename config_path
   end
 
   def env_config_file_name
@@ -152,11 +100,12 @@ class KumoKeisei::EnvironmentConfig
   def encrypted_env_secrets
     @file_loader.load_config(env_secrets_file_name)
   end
+
   def common_config
     @file_loader.load_config('common.yml')
   end
 
-  def raw_config
+  def env_config
     @file_loader.load_config(env_config_file_name)
   end
 end
