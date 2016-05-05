@@ -2,6 +2,8 @@ require 'kumo_ki'
 require 'logger'
 require 'yaml'
 
+require_relative 'file_loader'
+
 class KumoKeisei::EnvironmentConfig
   LOGGER = Logger.new(STDOUT)
 
@@ -11,6 +13,7 @@ class KumoKeisei::EnvironmentConfig
     @app_name = options[:app_name]
     @env_name = options[:env_name]
     @config_dir_path = options[:config_dir_path]
+    @file_loader = KumoKeisei::FileLoader.new(options)
 
     @log = logger
   end
@@ -48,8 +51,6 @@ class KumoKeisei::EnvironmentConfig
 
   def config
     @config ||= common_config.merge(raw_config)
-    p @raw_config
-    @config
   end
 
   def tags
@@ -130,6 +131,10 @@ class KumoKeisei::EnvironmentConfig
     filepath
   end
 
+  def env_config_name
+    "#{env_name}.yml"
+  end
+
   def common_config_path
     File.join(@config_dir_path, "common.yml")
   end
@@ -148,12 +153,10 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def common_config
-    return {} unless File.exist?(common_config_path)
-    @common_config ||= YAML.load(ERB.new(File.read(common_config_path)).result(get_binding))
+    @file_loader.load_config('common.yml')
   end
 
   def raw_config
-    return {} unless File.exist?(raw_config_path)
-    @raw_config ||= YAML.load(ERB.new(File.read(raw_config_path)).result(get_binding))
+    @file_loader.load_config(env_config_name)
   end
 end

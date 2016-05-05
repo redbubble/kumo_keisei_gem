@@ -11,9 +11,11 @@ describe KumoKeisei::EnvironmentConfig do
         config_dir_path: config_dir_path
       }
     end
+    let(:file_loader) { instance_double(KumoKeisei::FileLoader) }
 
     before do
       allow(File).to receive(:read).and_return(parameter_template)
+      allow(KumoKeisei::FileLoader).to receive(:new).and_return(file_loader)
     end
 
     subject { described_class.new(options).cf_params }
@@ -36,21 +38,12 @@ describe KumoKeisei::EnvironmentConfig do
 
     context 'a templated param' do
       let(:parameter_template) { "stack_name: <%= config['stack_name'] %>" }
-      let(:environment_config_file_path) { "#{config_dir_path}/#{env_name}.yml" }
-      let(:environment_parameter_file) { "stack_name: 'okonomiyaki'"}
+      let(:environment_config_file_name) { "#{env_name}.yml" }
+      let(:environment_parameters) { { "stack_name" => "okonomiyaki" } }
 
       it 'creates a array containing an aws formatted parameter hash' do
-        allow(File).to receive(:exist?)
-          .with("/var/config/common.yml")
-          .and_return(false)
-
-        allow(File).to receive(:exist?)
-          .with(environment_config_file_path)
-          .and_return(true)
-
-        allow(File).to receive(:read)
-          .with(environment_config_file_path)
-          .and_return(environment_parameter_file)
+        allow(file_loader).to receive(:load_config).with('common.yml').and_return({})
+        allow(file_loader).to receive(:load_config).with(environment_config_file_name).and_return(environment_parameters)
 
         expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "okonomiyaki"}])
       end
