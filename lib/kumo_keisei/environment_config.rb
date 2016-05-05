@@ -40,7 +40,7 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def cf_params
-    return [] if params_template.empty?
+    return [] unless params_template
 
     cf_params_json(get_stack_params(params_template))
   end
@@ -60,7 +60,9 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def params_template
-    File.read(@params_template_file_path)
+    return nil unless @params_template_file_path
+
+    @file_loader.load_config(@params_template_file_path)
   end
 
   def decrypt_secrets(secrets)

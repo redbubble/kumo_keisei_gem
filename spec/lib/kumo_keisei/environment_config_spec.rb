@@ -18,17 +18,30 @@ describe KumoKeisei::EnvironmentConfig do
   let(:logger) { double(:test_logger, debug: nil) }
 
   before do
-    allow(File).to receive(:read).and_return(parameter_template)
     allow(KumoKeisei::FileLoader).to receive(:new).and_return(file_loader)
     allow(KumoKi::KMS).to receive(:new).and_return(kms)
+    allow(file_loader).to receive(:load_config).with(params_template_file_path).and_return(parameter_template)
   end
 
   describe '#cf_params' do
     #TODO: parameterise the params template file path
     subject { described_class.new(options, logger).cf_params }
 
-    context 'no params' do
-      let(:parameter_template) { '' }
+    context 'params template file path is not provided' do
+      let(:options) do
+        {
+          env_name: env_name,
+          config_dir_path: config_dir_path
+        }
+      end
+
+      it 'creates an empty array' do
+        expect(subject).to eq([])
+      end
+    end
+
+    context 'params file is empty' do
+      let(:parameter_template) { nil }
 
       it 'creates an empty array' do
         expect(subject).to eq([])
@@ -40,11 +53,6 @@ describe KumoKeisei::EnvironmentConfig do
 
       it 'creates a array containing an aws formatted parameter hash' do
         expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: "parameter_value"}])
-      end
-
-      it 'reads the specified template file' do
-        expect(File).to receive(:read).with('/junk.txt')
-        subject
       end
     end
 
