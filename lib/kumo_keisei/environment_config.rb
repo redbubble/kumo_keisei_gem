@@ -3,6 +3,7 @@ require 'logger'
 require 'yaml'
 
 require_relative 'file_loader'
+require_relative 'parameter_builder'
 
 class KumoKeisei::EnvironmentConfig
   LOGGER = Logger.new(STDOUT)
@@ -42,8 +43,7 @@ class KumoKeisei::EnvironmentConfig
 
   def cf_params
     return [] unless params_template
-
-    CfnParameterBuilder.new(get_stack_params(params_template)).params
+    KumoKeisei::ParameterBuilder.new(get_stack_params(params_template)).params
   end
 
   private
