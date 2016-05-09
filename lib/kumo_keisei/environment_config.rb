@@ -14,6 +14,7 @@ class KumoKeisei::EnvironmentConfig
     @env_name = options[:env_name]
     @config_dir_path = options[:config_dir_path]
     @params_template_file_path = options[:params_template_file_path]
+    @injected_config = options[:config] || {}
     @file_loader = KumoKeisei::FileLoader.new(options)
 
     @log = logger
@@ -36,7 +37,7 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def config
-    @config ||= common_config.merge(env_config)
+    @config ||= common_config.merge(env_config).merge(injected_config)
   end
 
   def cf_params
