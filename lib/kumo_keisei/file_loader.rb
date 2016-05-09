@@ -5,7 +5,8 @@ module KumoKeisei
     end
 
     def load_config!(file_name, context = nil)
-      YAML.load(ERB.new(File.read(file_path(file_name)), context))
+      erb_result = ERB.new(File.read(file_path(file_name))).result(context)
+      YAML.load(erb_result)
     end
 
     def load_config(file_name)
