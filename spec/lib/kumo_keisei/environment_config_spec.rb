@@ -72,6 +72,26 @@ describe KumoKeisei::EnvironmentConfig do
   describe "#config" do
     subject { described_class.new(options, logger).config }
 
+    context 'injected config' do
+
+      let(:options) do
+        {
+          env_name: env_name,
+          config_dir_path: config_dir_path,
+          params_template_file_path: params_template_file_path,
+          injected_config: { "injected" => "yes" }
+        }
+      end
+
+      let(:common_parameters) { { "stack_name" => "okonomiyaki" } }
+      it 'adds injected config to the config hash' do
+        allow(file_loader).to receive(:load_config).with('common.yml').and_return(common_parameters)
+        allow(file_loader).to receive(:load_config).with(environment_config_file_name).and_return({})
+
+        expect(subject).to eq({ "stack_name" => "okonomiyaki", "injected" => "yes" })
+      end
+    end
+
     context 'common config' do
       let(:common_parameters) { { "stack_name" => "okonomiyaki" } }
 
