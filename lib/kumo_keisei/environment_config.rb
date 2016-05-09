@@ -42,7 +42,7 @@ class KumoKeisei::EnvironmentConfig
   def cf_params
     return [] unless params_template
 
-    cf_params_json(get_stack_params(params_template))
+    CfnParameterBuilder.new(get_stack_params(params_template)).params
   end
 
   private
@@ -55,14 +55,10 @@ class KumoKeisei::EnvironmentConfig
     YAML.load(ERB.new(params_template).result(get_binding))
   end
 
-  def cf_params_json(params_data)
-    params_data.flat_map { |name, value| { parameter_key: name, parameter_value: value } }
-  end
-
   def params_template
     return nil unless @params_template_file_path
 
-    @file_loader.load_config(@params_template_file_path)
+    @file_loader.load_config!(@params_template_file_path)
   end
 
   def decrypt_secrets(secrets)

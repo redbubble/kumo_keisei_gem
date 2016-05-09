@@ -20,11 +20,10 @@ describe KumoKeisei::EnvironmentConfig do
   before do
     allow(KumoKeisei::FileLoader).to receive(:new).and_return(file_loader)
     allow(KumoKi::KMS).to receive(:new).and_return(kms)
-    allow(file_loader).to receive(:load_config).with(params_template_file_path).and_return(parameter_template)
+    allow(file_loader).to receive(:load_config!).with(params_template_file_path).and_return(parameter_template)
   end
 
   describe '#cf_params' do
-    #TODO: parameterise the params template file path
     subject { described_class.new(options, logger).cf_params }
 
     context 'params template file path is not provided' do

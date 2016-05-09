@@ -1,17 +1,12 @@
 require 'json'
 
 module KumoKeisei
-  class ParameterBuilder
-    def initialize(dynamic_params = {}, file_path)
+  class CfnParameterBuilder
+    def initialize(dynamic_params = {})
       @dynamic_params = dynamic_params
-      @file_path = file_path
     end
 
     def params
-      parsed_dynamic_params + parsed_file_params
-    end
-
-    def parsed_dynamic_params
       @dynamic_params.map do |key, value|
         {
           parameter_key: key.to_s,
@@ -19,18 +14,24 @@ module KumoKeisei
         }
       end
     end
+  end
 
-    def parsed_file_params
-      return [] unless (@file_path && File.exists?(@file_path))
+  class CfnJsonFileLoader
+    def initialize(file_path)
+      @file_path = file_path
+    end
 
+    def load_config!
       file_contents = JSON.parse(File.read(@file_path))
 
-      file_contents.map do |param| 
-        {
-          parameter_key: param["ParameterKey"],
-          parameter_value: param["ParameterValue"]
-        }
+      file_contents.inject({}) do |acc, param| 
+        acc.merge(param['ParameterKey'] => param['ParameterValue'])
       end
+    end
+
+    def load_config
+      return {} unless (@file_path && File.exists?(@file_path))
+      load_config!
     end
   end
 end
