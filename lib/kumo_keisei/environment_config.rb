@@ -37,7 +37,7 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def config
-    @config ||= common_config.merge(env_config).merge(injected_config)
+    @config ||= common_config.merge(env_config).merge(@injected_config)
   end
 
   def cf_params
