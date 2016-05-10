@@ -105,6 +105,7 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def env_config
-    @file_loader.load_config(env_config_file_name)
+    config = @file_loader.load_config(env_config_file_name)
+    config || @file_loader.load_config('development.yml')
   end
 end
