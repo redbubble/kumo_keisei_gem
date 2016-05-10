@@ -2,7 +2,7 @@ require 'json'
 
 module KumoKeisei
   class ParameterBuilder
-    def initialize(dynamic_params = {}, file_path)
+    def initialize(dynamic_params = {}, file_path = nil)
       @dynamic_params = dynamic_params
       @file_path = file_path
     end
