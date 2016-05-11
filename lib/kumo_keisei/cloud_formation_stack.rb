@@ -42,7 +42,6 @@ module KumoKeisei
       if updatable?
         update!(dynamic_params)
       else
-        ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
         ensure_deleted!
         ConsoleJockey.write_line "Creating your new stack #{@stack_name}"
         create!(dynamic_params)
@@ -80,6 +79,8 @@ module KumoKeisei
       @stack = nil if options[:dump_cache]
 
       @stack ||= cloudformation.describe_stacks(stack_name: @stack_name).stacks.find { |stack| stack.stack_name == @stack_name }
+    rescue Aws::CloudFormation::Errors::ValidationError
+      nil
     end
 
     def cloudformation
@@ -87,19 +88,23 @@ module KumoKeisei
     end
 
     def ensure_deleted!
+      stack = get_stack
+      return if stack.nil?
+      return if stack.stack_status == 'DELETE_COMPLETE'
+
+      ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
       cloudformation.delete_stack(stack_name: @stack_name)
       cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = 20; waiter.max_attempts = 45 }
     end
 
     def updatable?
       stack = get_stack
+      return false if stack.nil?
 
       return true if UPDATEABLE_STATUSES.include? stack.stack_status
       return false if RECOVERABLE_STATUSES.include? stack.stack_status
       raise UpdateError.new("Stack is in an unrecoverable state") if UNRECOVERABLE_STATUSES.include? stack.stack_status
       raise UpdateError.new("Stack is busy, try again soon")
-    rescue Aws::CloudFormation::Errors::ValidationError
-      false
     end
 
     def create!(dynamic_params)

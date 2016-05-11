@@ -118,8 +118,16 @@ describe KumoKeisei::CloudFormationStack do
         end
 
         it "shows a friendly error message if the stack had issues during creation" do
+          @call_count = 0
+
           allow(cloudformation).to receive(:delete_stack)
-          allow(cloudformation).to receive(:describe_stacks).with(stack_name: stack_name).and_raise(Aws::CloudFormation::Errors::ValidationError.new('',''))
+          allow(cloudformation).to receive(:describe_stacks).with(stack_name: stack_name) do
+            @call_count += 1
+
+            raise Aws::CloudFormation::Errors::ValidationError.new('','') if @call_count > 1
+
+            OpenStruct.new(stacks: [])
+          end
           allow(cloudformation).to receive(:create_stack).with(cf_stack_create_params)
 
           error = Aws::Waiters::Errors::UnexpectedError.new(RuntimeError.new("Stack with id #{stack_name} does not exist"))
