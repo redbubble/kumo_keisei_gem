@@ -52,7 +52,7 @@ describe KumoKeisei::CloudFormationStack do
 
   describe "#apply!" do
     context "when the stack is updatable" do
-      UPDATEABLE_STATUSES = ['UPDATE_ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE', 'DELETE_COMPLETE']
+      UPDATEABLE_STATUSES = ['UPDATE_ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE']
 
       context "when the stack has changed" do
         before do
@@ -105,6 +105,16 @@ describe KumoKeisei::CloudFormationStack do
         allow(cloudformation).to receive(:wait_until).with(:stack_delete_complete, stack_name: stack_name).and_return(nil)
         allow(cloudformation).to receive(:wait_until).with(:stack_create_complete, stack_name: stack_name).and_return(nil)
         allow(cloudformation).to receive(:delete_stack).with(stack_name: stack_name)
+      end
+
+      context "and the stack has status DELETE_COMPLETE" do
+
+        it "creates the stack and does not attempt to delete the stack" do
+          expect(cloudformation).not_to receive(:delete_stack)
+          allow(cloudformation).to receive(:describe_stacks).with(stack_name: stack_name).and_return(stack_result_list_with_status('DELETE_COMPLETE', stack_name))
+          expect(cloudformation).to receive(:create_stack).with(cf_stack_create_params)
+          subject.apply!
+        end
       end
 
       context "and the stack does not exist" do
