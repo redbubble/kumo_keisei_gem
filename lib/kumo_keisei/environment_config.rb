@@ -97,7 +97,13 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def encrypted_env_secrets
-    @file_loader.load_config(env_secrets_file_name)
+    secrets = @file_loader.load_config(env_secrets_file_name)
+
+    if !secrets.empty?
+      secrets
+    else
+      @file_loader.load_config('development_secrets.yml')
+    end
   end
 
   def common_config
@@ -106,6 +112,11 @@ class KumoKeisei::EnvironmentConfig
 
   def env_config
     config = @file_loader.load_config(env_config_file_name)
-    config || @file_loader.load_config('development.yml')
+
+    if !config.empty?
+      config
+    else
+      @file_loader.load_config('development.yml')
+    end
   end
 end

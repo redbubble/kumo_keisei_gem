@@ -87,6 +87,7 @@ describe KumoKeisei::EnvironmentConfig do
       it 'adds injected config to the config hash' do
         allow(file_loader).to receive(:load_config).with('common.yml').and_return(common_parameters)
         allow(file_loader).to receive(:load_config).with(environment_config_file_name).and_return({})
+        allow(file_loader).to receive(:load_config).with('development.yml').and_return({})
 
         expect(subject).to eq({ "stack_name" => "okonomiyaki", "injected" => "yes" })
       end
@@ -98,16 +99,18 @@ describe KumoKeisei::EnvironmentConfig do
       it 'creates a array containing an aws formatted parameter hash' do
         allow(file_loader).to receive(:load_config).with('common.yml').and_return(common_parameters)
         allow(file_loader).to receive(:load_config).with(environment_config_file_name).and_return({})
+        allow(file_loader).to receive(:load_config).with('development.yml').and_return({})
 
         expect(subject).to eq('stack_name' => 'okonomiyaki')
       end
     end
 
     context 'merging common and environment specific configurations' do
+      let(:environment_config) { {'image' => 'ami-5678'} }
+
       context 'with environmental overrides' do
         let(:parameter_template) { "image: <%= config['image'] %>" }
         let(:common_config) { {'image' => 'ami-1234'} }
-        let(:environment_config) { {'image' => 'ami-5678'} }
         let(:env_name) { 'development' }
 
         it 'replaces the common value with the env value' do
@@ -116,6 +119,14 @@ describe KumoKeisei::EnvironmentConfig do
 
           expect(subject).to eq('image' => 'ami-5678')
         end
+      end
+
+      it 'falls back to a default environment if the requested one does not exist' do
+        allow(file_loader).to receive(:load_config).with('common.yml').and_return({})
+        allow(file_loader).to receive(:load_config).with("#{env_name}.yml").and_return({})
+        expect(file_loader).to receive(:load_config).with("development.yml").and_return(environment_config)
+
+        expect(subject).to eq('image' => 'ami-5678')
       end
     end
   end
@@ -135,26 +146,35 @@ describe KumoKeisei::EnvironmentConfig do
       allow(kms).to receive(:decrypt).with(crypted_password).and_return(plain_text_password)
     end
 
-    it 'should decrypt common secrets' do
+    it 'decrypts common secrets' do
       allow(file_loader).to receive(:load_config).with('common_secrets.yml').and_return(secrets)
       allow(file_loader).to receive(:load_config).with("#{env_name}_secrets.yml").and_return({})
+      allow(file_loader).to receive(:load_config).with("development_secrets.yml").and_return({})
 
       expect(subject).to eq('secret_password' => plain_text_password)
     end
 
-    it 'should decrypt environment secrets' do
+    it 'decrypts environment secrets' do
       allow(file_loader).to receive(:load_config).with('common_secrets.yml').and_return({})
       allow(file_loader).to receive(:load_config).with("#{env_name}_secrets.yml").and_return(secrets)
 
       expect(subject).to eq('secret_password' => plain_text_password)
     end
 
-    it 'should give preference to environment secrets' do
+    it 'gives preference to environment secrets' do
       allow(file_loader).to receive(:load_config).with('common_secrets.yml').and_return(secrets)
       allow(file_loader).to receive(:load_config).with("#{env_name}_secrets.yml").and_return(env_secrets)
       allow(kms).to receive(:decrypt).with(crypted_env_password).and_return(plain_text_env_password)
 
       expect(subject).to eq('secret_password' => plain_text_env_password)
+    end
+
+    it 'falls back to a default environment if the requested one does not exist' do
+      allow(file_loader).to receive(:load_config).with('common_secrets.yml').and_return({})
+      allow(file_loader).to receive(:load_config).with("#{env_name}_secrets.yml").and_return({})
+      expect(file_loader).to receive(:load_config).with("development_secrets.yml").and_return(secrets)
+
+      expect(subject).to eq('secret_password' => plain_text_password)
     end
   end
 end
