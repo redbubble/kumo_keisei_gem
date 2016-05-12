@@ -49,6 +49,8 @@ module KumoKeisei
     end
 
     def destroy!
+      return if get_stack.nil?
+
       wait_until_ready(false)
       ensure_deleted!
     end
