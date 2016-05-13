@@ -215,20 +215,5 @@ describe KumoKeisei::CloudFormationStack do
         )
       end
     end
-
-    describe "#get_confirmation" do
-      before {
-        allow(STDIN).to receive(:gets) { 'yes' }
-
-      }
-      it 'returns user input if there is no timeout' do
-        expect(subject.get_confirmation).to eq 'yes'
-      end
-
-      it 'returns false if there is a timeout' do
-
-      end
-
-    end
   end
 end

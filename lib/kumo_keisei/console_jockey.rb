@@ -1,5 +1,10 @@
 module KumoKeisei
   class ConsoleJockey
+
+    def initialize(timeout=30)
+      @timeout = timeout
+    end
+
     def self.flash_message(message)
       puts "\n"
       puts "###################=============================------------"
@@ -19,9 +24,8 @@ module KumoKeisei
     def get_confirmation
 
       begin
-        status = Timeout::timeout(CONFIRMATION_TIMEOUT) {
-          # Something that should be interrupted if it takes more than 5 seconds...
-          stdin.gets.chomp
+        status = Timeout::timeout(@timeout) {
+          STDIN.gets.chomp
         }
       rescue
         status = false
