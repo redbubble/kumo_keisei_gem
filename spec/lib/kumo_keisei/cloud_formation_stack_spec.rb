@@ -44,8 +44,18 @@ describe KumoKeisei::CloudFormationStack do
      it "deletes the stack" do
        expect(cloudformation).to receive(:delete_stack).with({stack_name: stack_name}).and_return(cf_stack)
        allow(cloudformation).to receive(:wait_until).with(:stack_delete_complete, stack_name: stack_name).and_return(nil)
-
        subject.destroy!
+    end
+
+    it "notifies the user of what it is about to delete" do
+      expect(KumoKeisei::ConsoleJockey).to receive(:flash_message).with("Warning! You are about to delete the CloudFormation Stack #{stack_name}, enter 'yes' to continue.")
+      subject.destroy!
+    end
+
+    it "does deletes the stack if the user confirms" do
+    end
+
+    it "does not delete the stack if the the user refuses confirmation" do
     end
 
   end

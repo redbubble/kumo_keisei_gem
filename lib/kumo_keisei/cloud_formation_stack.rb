@@ -50,9 +50,9 @@ module KumoKeisei
 
     def destroy!
       return if get_stack.nil?
-
-      wait_until_ready(false)
-      ensure_deleted!
+      flash_message "Warning! You are about to delete the CloudFormation Stack #{@stack_name}, enter 'yes' to continue."
+      #wait_until_ready(false)
+      #ensure_deleted!
     end
 
     def outputs(output)
