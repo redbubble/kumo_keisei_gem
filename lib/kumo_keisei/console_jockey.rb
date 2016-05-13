@@ -1,3 +1,5 @@
+require 'timeout'
+
 module KumoKeisei
   class ConsoleJockey
 
@@ -18,7 +20,6 @@ module KumoKeisei
     end
 
     def self.get_confirmation(timeout=30)
-
       begin
         status = Timeout::timeout(timeout) {
           STDIN.gets.chomp
@@ -26,8 +27,7 @@ module KumoKeisei
       rescue
         status = false
       end
-
-      puts status.class
+      status == "yes"
     end
   end
 end

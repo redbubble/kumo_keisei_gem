@@ -3,14 +3,14 @@ require 'ostruct'
 
 describe KumoKeisei::ConsoleJockey do
   describe "#get_confirmation" do
-    let(:timeout) { 1 }
+    let(:timeout) { 0.5 }
     subject { described_class }
 
     context 'no timeout' do
 
       it 'returns true if user enters yes' do
         allow(STDIN).to receive(:gets) { 'yes'}
-        expect(subject.get_confirmation).to be true
+        expect(subject.get_confirmation(timeout)).to be true
       end
 
       it 'returns false if user enters anything other than yes' do
