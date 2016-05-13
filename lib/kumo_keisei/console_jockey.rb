@@ -15,5 +15,18 @@ module KumoKeisei
 
       $stdout.flush
     end
+
+    def get_confirmation
+
+      begin
+        status = Timeout::timeout(CONFIRMATION_TIMEOUT) {
+          # Something that should be interrupted if it takes more than 5 seconds...
+          stdin.gets.chomp
+        }
+      rescue
+        status = false
+      end
+      status == 'yes'
+    end
   end
 end
