@@ -30,11 +30,11 @@ module KumoKeisei
       self.new(stack_name, nil).exists?
     end
 
-    def initialize(stack_name, stack_template, stack_params_filepath = nil)
+    def initialize(stack_name, stack_template, stack_params_filepath = nil, confirmation_timeout=30)
       @stack_name = stack_name
       @stack_template = stack_template
       @stack_params_filepath = stack_params_filepath
-      @console_jockey = ConsoleJockey.new
+      @confirmation_timeout = confirmation_timeout
       flash_message "Stack name: #{stack_name}"
     end
 
@@ -50,8 +50,9 @@ module KumoKeisei
 
     def destroy!
       return if get_stack.nil?
+
       flash_message "Warning! You are about to delete the CloudFormation Stack #{@stack_name}, enter 'yes' to continue."
-      return unless ConsoleJockey.get_confirmation
+      return unless ConsoleJockey.get_confirmation(@confirmation_timeout)
 
       wait_until_ready(false)
       ensure_deleted!

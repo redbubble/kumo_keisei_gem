@@ -27,8 +27,8 @@ describe KumoKeisei::CloudFormationStack do
   let(:cf_stack_create_params) do
     cf_stack_update_params.merge(on_failure: "DELETE")
   end
-
-  subject(:instance) { KumoKeisei::CloudFormationStack.new(stack_name, stack_template_path, file_params_path) }
+  let(:confirmation_timeout) { 0.5 }
+  subject(:instance) { KumoKeisei::CloudFormationStack.new(stack_name, stack_template_path, file_params_path, confirmation_timeout) }
 
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
@@ -40,22 +40,21 @@ describe KumoKeisei::CloudFormationStack do
   end
 
   describe "#destroy!" do
-
-    #  it "deletes the stack" do
-    #    expect(cloudformation).to receive(:delete_stack).with({stack_name: stack_name}).and_return(cf_stack)
-    #    allow(cloudformation).to receive(:wait_until).with(:stack_delete_complete, stack_name: stack_name).and_return(nil)
-    #    subject.destroy!
-    # end
-
     it "notifies the user of what it is about to delete" do
       expect(KumoKeisei::ConsoleJockey).to receive(:flash_message).with("Warning! You are about to delete the CloudFormation Stack #{stack_name}, enter 'yes' to continue.")
       subject.destroy!
     end
 
-    it "does deletes the stack if the user confirms" do
+    it "does delete the stack if the user confirms" do
+      expect(KumoKeisei::ConsoleJockey).to receive(:get_confirmation).with(confirmation_timeout).and_return(true)
+      expect(cloudformation).to receive(:delete_stack).with({stack_name: stack_name}).and_return(cf_stack)
+      allow(cloudformation).to receive(:wait_until).with(:stack_delete_complete, stack_name: stack_name).and_return(nil)
+      subject.destroy!
     end
 
     it "does not delete the stack if the the user refuses confirmation" do
+      expect(KumoKeisei::ConsoleJockey).to receive(:get_confirmation).with(confirmation_timeout).and_return(false)
+      subject.destroy!
     end
 
   end
