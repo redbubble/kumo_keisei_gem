@@ -33,6 +33,7 @@ describe KumoKeisei::CloudFormationStack do
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
     allow(KumoKeisei::ConsoleJockey).to receive(:write_line).and_return(nil)
+    allow(KumoKeisei::ConsoleJockey).to receive(:get_confirmation).with(confirmation_timeout).and_return(false)
     allow(Aws::CloudFormation::Client).to receive(:new).and_return(cloudformation)
     allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(cf_stack)
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
