@@ -27,7 +27,9 @@ module KumoKeisei
       rescue
         status = false
       end
-      status == "yes"
+      proceed = status == "yes"
+      proceed ? puts('Proceeding.') : puts('Aborted!')
+      proceed
     end
   end
 end
