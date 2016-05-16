@@ -1,5 +1,8 @@
+require 'timeout'
+
 module KumoKeisei
   class ConsoleJockey
+
     def self.flash_message(message)
       puts "\n"
       puts "###################=============================------------"
@@ -14,6 +17,19 @@ module KumoKeisei
       puts message
 
       $stdout.flush
+    end
+
+    def self.get_confirmation(timeout=30)
+      begin
+        status = Timeout::timeout(timeout) {
+          STDIN.gets.chomp
+        }
+      rescue
+        status = false
+      end
+      proceed = status == "yes"
+      proceed ? puts('Proceeding.') : puts('Aborted!')
+      proceed
     end
   end
 end
