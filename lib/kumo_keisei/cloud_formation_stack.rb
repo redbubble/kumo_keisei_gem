@@ -2,6 +2,7 @@ require 'aws-sdk'
 
 require_relative "parameter_builder"
 require_relative "console_jockey"
+require_relative "errors"
 
 module KumoKeisei
   class CloudFormationStack
@@ -31,6 +32,7 @@ module KumoKeisei
     end
 
     def initialize(stack_name, stack_template, stack_params_filepath = nil, confirmation_timeout=30)
+      raise StackValidationError.new("The stack name needs to be 32 characters or shorter") if stack_name.length > 32
       @stack_name = stack_name
       @stack_template = stack_template
       @stack_params_filepath = stack_params_filepath

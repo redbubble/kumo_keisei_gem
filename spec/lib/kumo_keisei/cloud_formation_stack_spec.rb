@@ -60,6 +60,20 @@ describe KumoKeisei::CloudFormationStack do
 
   end
 
+  describe "#initialize" do
+    it "accepts short stack names" do
+      instance
+    end
+
+    context "a stack name that is too long" do
+      let(:stack_name) { "long-stack-name-that-will-make-aws-barf" }
+
+      it "blows up since the ELB names have to be 32 or shorter" do
+        expect { instance }.to raise_error(KumoKeisei::StackValidationError, "The stack name needs to be 32 characters or shorter")
+      end
+    end
+  end
+
   describe "#apply!" do
     context "when the stack is updatable" do
       UPDATEABLE_STATUSES = ['UPDATE_ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE']
