@@ -32,7 +32,6 @@ module KumoKeisei
     end
 
     def initialize(stack_name, stack_template, stack_params_filepath = nil, confirmation_timeout=30)
-      raise StackValidationError.new("The stack name needs to be 32 characters or shorter") if stack_name.length > 32
       @stack_name = stack_name
       @stack_template = stack_template
       @stack_params_filepath = stack_params_filepath
@@ -115,6 +114,8 @@ module KumoKeisei
     end
 
     def create!(dynamic_params)
+      raise StackValidationError.new("The stack name needs to be 32 characters or shorter") if @stack_name.length > 32
+
       cloudformation_params = ParameterBuilder.new(dynamic_params, @stack_params_filepath).params
       cloudformation.create_stack(
         stack_name: @stack_name,
