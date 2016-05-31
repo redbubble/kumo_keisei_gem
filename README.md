@@ -53,7 +53,7 @@ This gem is tested with Ruby (MRI) versions 1.9.3 and 2.2.3.
 
 Changes to the gem can be manually tested end to end in a project that uses the gem (i.e. http-wala).
 
-1. First start the dev-tools container: `baxter kumo tools debug non-production`
+1. First start the dev-tools container: `kumo tools debug non-production`
 1. Re-install the gem: `gem specific_install https://github.com/redbubble/kumo_keisei_gem.git -b <your_branch>`
 1. Fire up a console: `irb`
 1. Require the gem: `require "kumo_keisei"`
