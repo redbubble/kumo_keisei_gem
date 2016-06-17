@@ -38,28 +38,46 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def config
-    @config ||= common_config.merge(env_config).merge(@injected_config)
+    # a hash of all settings that apply to this environment
+    load_config
   end
 
   def cf_params
-    return [] unless params_template
-    KumoKeisei::ParameterBuilder.new(get_stack_params(params_template)).params
+    # returns a list of Cfn friendly paramater_value, paramater_key pairs for
+    # consumption by cloudformation.
+    return [] unless params
+    # stack_params = get_stack_params(params)
+    load_config
+    puts 'AAA'
+    puts config
+    puts 'BBB'
+    stack_params = YAML.load(params.result(get_binding))
+    KumoKeisei::ParameterBuilder.new(stack_params).params
   end
 
   private
+
+  def load_config
+    @config ||= common_config.merge(env_config).merge(@injected_config)
+  end
 
   def kms
     @kms ||= KumoKi::KMS.new
   end
 
-  def get_stack_params(params_template)
-    YAML.load(ERB.new(params_template).result(get_binding))
-  end
+  # def get_stack_params(params)
+  #   puts 'LOLOLOLOLOL'
+  #   puts params
+  #   puts 'YOLO'
+  #   # require pry; binding.pry
+  #   erb = ERB.new(params)
+  #   puts erb
+  #   YAML.load(erb.result(get_binding))
+  # end
 
-  def params_template
+  def params
     return nil unless @params_template_file_path
-
-    @file_loader.load_config!(@params_template_file_path)
+    @file_loader.load_erb(@params_template_file_path)
   end
 
   def decrypt_secrets(secrets)
@@ -93,30 +111,31 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def encrypted_common_secrets
-    @file_loader.load_config('common_secrets.yml')
+    @file_loader.load_hash('common_secrets.yml', optional=true)
   end
 
   def encrypted_env_secrets
-    secrets = @file_loader.load_config(env_secrets_file_name)
+    secrets = @file_loader.load_hash(env_secrets_file_name, optional=true)
 
     if !secrets.empty?
       secrets
     else
-      @file_loader.load_config('development_secrets.yml')
+      @file_loader.load_hash('development_secrets.yml', optional=true)
     end
   end
 
   def common_config
-    @file_loader.load_config('common.yml')
+    @file_loader.load_hash('common.yml', optional=true)
   end
 
   def env_config
-    config = @file_loader.load_config(env_config_file_name)
-
+    puts 'env_config'
+    config = @file_loader.load_hash(env_config_file_name, optional=true)
+    puts config
     if !config.empty?
       config
     else
-      @file_loader.load_config('development.yml')
+      @file_loader.load_hash('development.yml', optional=true)
     end
   end
 end

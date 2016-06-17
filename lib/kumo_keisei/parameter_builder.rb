@@ -12,6 +12,8 @@ module KumoKeisei
     end
 
     def parsed_dynamic_params
+      puts "xxx#{@dynamic_params}yyy"
+      puts "xxx#{@dynamic_params.class}yyy"
       @dynamic_params.map do |key, value|
         {
           parameter_key: key.to_s,
@@ -25,7 +27,7 @@ module KumoKeisei
 
       file_contents = JSON.parse(File.read(@file_path))
 
-      file_contents.map do |param| 
+      file_contents.map do |param|
         {
           parameter_key: param["ParameterKey"],
           parameter_value: param["ParameterValue"]

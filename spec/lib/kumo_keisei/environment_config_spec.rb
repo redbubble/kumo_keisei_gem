@@ -11,20 +11,23 @@ describe KumoKeisei::EnvironmentConfig do
     }
   end
   let(:file_loader) { instance_double(KumoKeisei::FileLoader) }
-  let(:parameter_template) { "stack_name: <%= config['stack_name'] %>" }
+  let(:parameters) { ERB.new("") } #{ "stack_name" => 'foo-stack' } }
   let(:params_template_file_path) { '/junk.txt' }
   let(:environment_config_file_name) { "#{env_name}.yml" }
   let(:kms) { instance_double(KumoKi::KMS) }
   let(:logger) { double(:test_logger, debug: nil) }
+  let(:environment_config) { described_class.new(options, logger) }
+  let(:fake_environment_binding) { binding }
 
   before do
     allow(KumoKeisei::FileLoader).to receive(:new).and_return(file_loader)
     allow(KumoKi::KMS).to receive(:new).and_return(kms)
-    allow(file_loader).to receive(:load_config!).with(params_template_file_path).and_return(parameter_template)
+    allow(environment_config).to receive(:get_binding).and_return(fake_environment_binding)
+    allow(file_loader).to receive(:load_erb).with(params_template_file_path).and_return(parameters)
   end
 
   describe '#cf_params' do
-    subject { described_class.new(options, logger).cf_params }
+    subject { environment_config.cf_params }
 
     context 'params template file path is not provided' do
       let(:options) do
@@ -39,8 +42,8 @@ describe KumoKeisei::EnvironmentConfig do
       end
     end
 
-    context 'params file is empty' do
-      let(:parameter_template) { nil }
+    context 'params is empty' do
+      let(:parameters) { nil }
 
       it 'creates an empty array' do
         expect(subject).to eq([])
@@ -48,7 +51,15 @@ describe KumoKeisei::EnvironmentConfig do
     end
 
     context 'a hard-coded param' do
-      let(:parameter_template) { "parameter_key: <%= 'parameter_value' %>" }
+        # let(:parameters) { { "parameter_key" => 'parameter_value' } }
+      let(:parameters) { ERB.new("stack_name: \"foo-stack\"") } #{ "stack_name" => 'foo-stack' } }
+      let(:parameters) { ERB.new("parameter_key: \"parameter_value\"") }
+
+      before do
+        allow(file_loader).to receive(:load_hash).with('common.yml').and_return({})
+        allow(file_loader).to receive(:load_hash).with('the_jungle.yml').and_return({})
+        allow(file_loader).to receive(:load_hash).with('development.yml').and_return({})
+      end
 
       it 'creates a array containing an aws formatted parameter hash' do
         expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: "parameter_value"}])
@@ -56,15 +67,26 @@ describe KumoKeisei::EnvironmentConfig do
     end
 
     context 'templated params' do
+      let(:parameters) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
       let(:environment_parameters) { { "stack_name" => "okonomiyaki" } }
 
       context 'environment params' do
         it 'creates a array containing an aws formatted parameter hash' do
-          allow(file_loader).to receive(:load_config).with('common.yml').and_return({})
-          allow(file_loader).to receive(:load_config).with(environment_config_file_name).and_return(environment_parameters)
+          expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return({})
+          expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return(environment_parameters)
 
           expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "okonomiyaki"}])
         end
+      end
+    end
+
+    context 'reading params from config' do
+      let(:parameter_template) { "parameter_key: <%= config['param'] %>" }
+      let(:the_value) { "food" }
+      before { allow(environment_config).to receive(:config).and_return({'param' => the_value})}
+
+      it "renders the config value" do
+        expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: the_value}])
       end
     end
   end
