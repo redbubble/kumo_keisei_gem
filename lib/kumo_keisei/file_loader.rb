@@ -4,15 +4,15 @@ module KumoKeisei
       @config_dir_path = options[:config_dir_path]
     end
 
-    def load_config!(file_name, context = nil)
+    def load_mandatory_config(file_name, context = nil)
       erb_result = ERB.new(File.read(file_path(file_name))).result(context)
       YAML.load(erb_result)
     end
 
-    def load_config(file_name)
+    def load_optional_config(file_name)
       path = file_path(file_name)
       return {} unless File.exist?(path)
-      load_config!(file_name)
+      load_mandatory_config(file_name)
     end
 
     private

@@ -1,13 +1,13 @@
 require 'spec_helper'
 
 describe KumoKeisei::FileLoader do
-  describe "#load_config" do
+  describe "#load_optional_config" do
     let(:config_dir_path) { '/the/garden/path' }
     let(:options) { { config_dir_path: config_dir_path } }
     let(:file_name) { 'environment.yml' }
     let(:full_file_path) { config_dir_path + '/' + file_name }
 
-    subject { KumoKeisei::FileLoader.new(options).load_config(file_name) }
+    subject { KumoKeisei::FileLoader.new(options).load_optional_config(file_name) }
 
     context "when the file does not exist" do
       it "returns an empty hash" do
@@ -26,13 +26,13 @@ describe KumoKeisei::FileLoader do
     end
   end
 
-  describe '#load_config!' do
+  describe '#load_mandatory_config' do
     let(:config_dir_path) { '/the/garden/path' }
     let(:options) { { config_dir_path: config_dir_path } }
     let(:file_name) { 'environment.yml' }
     let(:full_file_path) { config_dir_path + '/' + file_name }
 
-    subject { KumoKeisei::FileLoader.new(options).load_config!(file_name) }
+    subject { KumoKeisei::FileLoader.new(options).load_mandatory_config(file_name) }
 
     context 'when the file does not exist' do
       it 'raises an error' do
