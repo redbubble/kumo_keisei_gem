@@ -90,29 +90,29 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def encrypted_common_secrets
-    @file_loader.load_hash('common_secrets.yml', optional=true)
+    @file_loader.load_hash('common_secrets.yml')
   end
 
   def encrypted_env_secrets
-    secrets = @file_loader.load_hash(env_secrets_file_name, optional=true)
+    secrets = @file_loader.load_hash(env_secrets_file_name)
 
     if !secrets.empty?
       secrets
     else
-      @file_loader.load_hash('development_secrets.yml', optional=true)
+      @file_loader.load_hash('development_secrets.yml')
     end
   end
 
   def common_config
-    @file_loader.load_hash('common.yml', optional=true)
+    @file_loader.load_hash('common.yml')
   end
 
   def env_config
-    config = @file_loader.load_hash(env_config_file_name, optional=true)
+    config = @file_loader.load_hash(env_config_file_name)
     if !config.empty?
       config
     else
-      @file_loader.load_hash('development.yml', optional=true)
+      @file_loader.load_hash('development.yml')
     end
   end
 end

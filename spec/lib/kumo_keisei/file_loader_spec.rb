@@ -21,8 +21,8 @@ describe KumoKeisei::FileLoader do
     end
   end
 
-  describe "#load_hash when you set optional flag to true" do
-    subject { KumoKeisei::FileLoader.new(options).load_hash(file_name, optional = true) }
+  describe "#load_hash" do
+    subject { KumoKeisei::FileLoader.new(options).load_hash(file_name) }
 
     context "when the file does not exist" do
       it "returns an empty hash" do
@@ -40,13 +40,13 @@ describe KumoKeisei::FileLoader do
     end
   end
 
-  describe "#load_hash when you don't set optional flag to true" do
+  describe "#load_hash when you set optional flag to false" do
     let(:config_dir_path) { '/the/garden/path' }
     let(:options) { { config_dir_path: config_dir_path } }
     let(:file_name) { 'environment.yml' }
     let(:full_file_path) { config_dir_path + '/' + file_name }
 
-    subject { KumoKeisei::FileLoader.new(options).load_hash(file_name) }
+    subject { KumoKeisei::FileLoader.new(options).load_hash(file_name, false) }
 
     context 'when the file does not exist' do
       it 'raises an error' do

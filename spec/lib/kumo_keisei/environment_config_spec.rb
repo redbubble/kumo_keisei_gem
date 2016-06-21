@@ -57,9 +57,9 @@ describe KumoKeisei::EnvironmentConfig do
         let(:parameters) { ERB.new("parameter_key: \"parameter_value\"") }
 
         before do
-          allow(file_loader).to receive(:load_hash).with('common.yml', optional=true).and_return({})
-          allow(file_loader).to receive(:load_hash).with('the_jungle.yml', optional=true).and_return({})
-          allow(file_loader).to receive(:load_hash).with('development.yml', optional=true).and_return({})
+          allow(file_loader).to receive(:load_hash).with('common.yml').and_return({})
+          allow(file_loader).to receive(:load_hash).with('the_jungle.yml').and_return({})
+          allow(file_loader).to receive(:load_hash).with('development.yml').and_return({})
         end
 
         it 'creates a array containing an aws formatted parameter hash' do
@@ -82,23 +82,23 @@ describe KumoKeisei::EnvironmentConfig do
         # context 'common params' do
         context 'hiearchy of parameters' do
           it 'will load values from the common paramater file' do
-            expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return(common_parameters)
-            expect(file_loader).to receive(:load_hash).with("development.yml", optional = true).and_return({})
-            expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return({})
+            expect(file_loader).to receive(:load_hash).with('common.yml').and_return(common_parameters)
+            expect(file_loader).to receive(:load_hash).with("development.yml").and_return({})
+            expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
             expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "common"}])
           end
 
         # context 'environment specific params' do
           it 'will load values from the environment specific file' do
-            expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return({})
-            expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return(environment_parameters)
+            expect(file_loader).to receive(:load_hash).with('common.yml').and_return({})
+            expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return(environment_parameters)
             expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "environment"}])
           end
 
           it 'will load values from the shared development file if an environment specific file has no values' do
-            expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return({})
-            expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return({})
-            expect(file_loader).to receive(:load_hash).with("development.yml", optional = true).and_return(development_parameters)
+            expect(file_loader).to receive(:load_hash).with('common.yml').and_return({})
+            expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
+            expect(file_loader).to receive(:load_hash).with("development.yml").and_return(development_parameters)
             expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "development"}])
           end
         end
@@ -125,9 +125,9 @@ describe KumoKeisei::EnvironmentConfig do
 
       let(:common_parameters) { { "stack_name" => "okonomiyaki" } }
       it 'adds injected config to the config hash' do
-        expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return(common_parameters)
-        expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return({})
-        expect(file_loader).to receive(:load_hash).with("development.yml", optional = true).and_return({})
+        expect(file_loader).to receive(:load_hash).with('common.yml').and_return(common_parameters)
+        expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
+        expect(file_loader).to receive(:load_hash).with("development.yml").and_return({})
 
         expect(subject).to eq({ "stack_name" => "okonomiyaki", "injected" => "yes" })
       end
@@ -137,9 +137,9 @@ describe KumoKeisei::EnvironmentConfig do
       let(:common_parameters) { { "stack_name" => "okonomiyaki" } }
 
       it 'creates a array containing an aws formatted parameter hash' do
-        expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return(common_parameters)
-        expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return({})
-        expect(file_loader).to receive(:load_hash).with("development.yml", optional = true).and_return({})
+        expect(file_loader).to receive(:load_hash).with('common.yml').and_return(common_parameters)
+        expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
+        expect(file_loader).to receive(:load_hash).with("development.yml").and_return({})
 
         expect(subject).to eq('stack_name' => 'okonomiyaki')
       end
@@ -155,16 +155,16 @@ describe KumoKeisei::EnvironmentConfig do
         let(:env_name) { 'development' }
 
         it 'replaces the common value with the env value' do
-          expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return(common_config)
-          expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return(environment_config)
+          expect(file_loader).to receive(:load_hash).with('common.yml').and_return(common_config)
+          expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return(environment_config)
           expect(subject).to eq('image' => 'ami-5678')
         end
       end
 
       it 'falls back to a default environment if the requested one does not exist' do
-        expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return({})
-        expect(file_loader).to receive(:load_hash).with("#{env_name}.yml", optional = true).and_return({})
-        expect(file_loader).to receive(:load_hash).with("development.yml", optional = true).and_return(development_config)
+        expect(file_loader).to receive(:load_hash).with('common.yml').and_return({})
+        expect(file_loader).to receive(:load_hash).with("#{env_name}.yml").and_return({})
+        expect(file_loader).to receive(:load_hash).with("development.yml").and_return(development_config)
 
         expect(subject).to eq('image' => 'ami-9999')
       end
@@ -187,32 +187,32 @@ describe KumoKeisei::EnvironmentConfig do
     end
 
     it 'decrypts common secrets' do
-      allow(file_loader).to receive(:load_hash).with('common_secrets.yml', optional=true).and_return(secrets)
-      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml", optional=true).and_return({})
-      allow(file_loader).to receive(:load_hash).with("development_secrets.yml", optional=true).and_return({})
+      allow(file_loader).to receive(:load_hash).with('common_secrets.yml').and_return(secrets)
+      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml").and_return({})
+      allow(file_loader).to receive(:load_hash).with("development_secrets.yml").and_return({})
 
       expect(subject).to eq('secret_password' => plain_text_password)
     end
 
     it 'decrypts environment secrets' do
-      allow(file_loader).to receive(:load_hash).with('common_secrets.yml', optional=true).and_return({})
-      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml", optional=true).and_return(secrets)
+      allow(file_loader).to receive(:load_hash).with('common_secrets.yml').and_return({})
+      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml").and_return(secrets)
 
       expect(subject).to eq('secret_password' => plain_text_password)
     end
 
     it 'gives preference to environment secrets' do
-      allow(file_loader).to receive(:load_hash).with('common_secrets.yml', optional=true).and_return(secrets)
-      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml", optional=true).and_return(env_secrets)
+      allow(file_loader).to receive(:load_hash).with('common_secrets.yml').and_return(secrets)
+      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml").and_return(env_secrets)
       allow(kms).to receive(:decrypt).with(crypted_env_password).and_return(plain_text_env_password)
 
       expect(subject).to eq('secret_password' => plain_text_env_password)
     end
 
     it 'falls back to a default environment if the requested one does not exist' do
-      allow(file_loader).to receive(:load_hash).with('common_secrets.yml', optional=true).and_return({})
-      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml", optional=true).and_return({})
-      expect(file_loader).to receive(:load_hash).with("development_secrets.yml", optional=true).and_return(secrets)
+      allow(file_loader).to receive(:load_hash).with('common_secrets.yml').and_return({})
+      allow(file_loader).to receive(:load_hash).with("#{env_name}_secrets.yml").and_return({})
+      expect(file_loader).to receive(:load_hash).with("development_secrets.yml").and_return(secrets)
 
       expect(subject).to eq('secret_password' => plain_text_password)
     end

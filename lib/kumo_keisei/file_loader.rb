@@ -4,7 +4,7 @@ module KumoKeisei
       @config_dir_path = options[:config_dir_path]
     end
 
-    def load_hash(file_name, optional = false)
+    def load_hash(file_name, optional = true)
       # reads a file presuming it's a yml in form of key: value, returning it as a hash
       path = file_path(file_name)
 
