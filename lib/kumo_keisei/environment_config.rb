@@ -35,24 +35,20 @@ class KumoKeisei::EnvironmentConfig
 
   def config
     # a hash of all settings that apply to this environment
-    load_config
+    @config ||= common_config.merge(env_config).merge(@injected_config)
   end
 
   def cf_params
     # returns a list of Cfn friendly paramater_value, paramater_key pairs for
     # consumption by cloudformation.
     return [] unless params
-    load_config
+    config
 
     stack_params = YAML.load(params.result(binding))
     KumoKeisei::ParameterBuilder.new(stack_params).params
   end
 
   private
-
-  def load_config
-    @config ||= common_config.merge(env_config).merge(@injected_config)
-  end
 
   def kms
     @kms ||= KumoKi::KMS.new
