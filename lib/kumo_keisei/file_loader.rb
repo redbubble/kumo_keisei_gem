@@ -14,7 +14,7 @@ module KumoKeisei
         # file not found, return empty dictionary if that is ok
         return {} if optional
         raise ex
-      rescue Exception => ex
+      rescue StandardError => ex
         # this is an error we weren't expecting
         raise ex
       end

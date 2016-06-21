@@ -21,7 +21,7 @@ module KumoKeisei
     end
 
     def parsed_file_params
-      return [] unless (@file_path && File.exists?(@file_path))
+      return [] unless (@file_path && File.exist?(@file_path))
 
       file_contents = JSON.parse(File.read(@file_path))
 

@@ -147,7 +147,7 @@ module KumoKeisei
     rescue Aws::CloudFormation::Errors::ValidationError => ex
       raise ex unless ex.message == "No updates are to be performed."
       ConsoleJockey.write_line "No changes need to be applied for #{@stack_name}."
-    rescue Aws::Waiters::Errors::FailureStateError => ex
+    rescue Aws::Waiters::Errors::FailureStateError
       ConsoleJockey.write_line "Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates."
       ConsoleJockey.write_line "Find error details in the AWS CloudFormation console: #{stack_events_url}"
       raise UpdateError.new("Stack update failed for #{@stack_name}.")

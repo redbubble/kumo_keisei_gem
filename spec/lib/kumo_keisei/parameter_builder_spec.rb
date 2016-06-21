@@ -15,7 +15,7 @@ describe KumoKeisei::ParameterBuilder do
 
   describe '#params' do
     before do
-      allow(File).to receive(:exists?).with(file_path).and_return(true)
+      allow(File).to receive(:exist?).with(file_path).and_return(true)
       allow(File).to receive(:read).with(file_path).and_return(file_content.to_json)
     end
 
