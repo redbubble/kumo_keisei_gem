@@ -17,76 +17,98 @@ describe KumoKeisei::EnvironmentConfig do
   let(:kms) { instance_double(KumoKi::KMS) }
   let(:logger) { double(:test_logger, debug: nil) }
   let(:environment_config) { described_class.new(options, logger) }
-  let(:fake_environment_binding) { binding }
 
   before do
     allow(KumoKeisei::FileLoader).to receive(:new).and_return(file_loader)
     allow(KumoKi::KMS).to receive(:new).and_return(kms)
-    allow(environment_config).to receive(:get_binding).and_return(fake_environment_binding)
     allow(file_loader).to receive(:load_erb).with(params_template_file_path).and_return(parameters)
   end
 
-  describe '#cf_params' do
-    subject { environment_config.cf_params }
+  context 'unit tests' do
+    let(:fake_environment_binding) { binding }
 
-    context 'params template file path is not provided' do
-      let(:options) do
-        {
-          env_name: env_name,
-          config_dir_path: config_dir_path
-        }
-      end
-
-      it 'creates an empty array' do
-        expect(subject).to eq([])
-      end
+    before do
+      allow(environment_config).to receive(:get_binding).and_return(fake_environment_binding)
     end
 
-    context 'params is empty' do
-      let(:parameters) { nil }
+    describe '#cf_params' do
+      subject { environment_config.cf_params }
 
-      it 'creates an empty array' do
-        expect(subject).to eq([])
-      end
-    end
+      context 'params template file path is not provided' do
+        let(:options) do
+          {
+            env_name: env_name,
+            config_dir_path: config_dir_path
+          }
+        end
 
-    context 'a hard-coded param' do
-        # let(:parameters) { { "parameter_key" => 'parameter_value' } }
-      let(:parameters) { ERB.new("stack_name: \"foo-stack\"") } #{ "stack_name" => 'foo-stack' } }
-      let(:parameters) { ERB.new("parameter_key: \"parameter_value\"") }
-
-      before do
-        allow(file_loader).to receive(:load_hash).with('common.yml').and_return({})
-        allow(file_loader).to receive(:load_hash).with('the_jungle.yml').and_return({})
-        allow(file_loader).to receive(:load_hash).with('development.yml').and_return({})
+        it 'creates an empty array' do
+          expect(subject).to eq([])
+        end
       end
 
-      it 'creates a array containing an aws formatted parameter hash' do
-        expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: "parameter_value"}])
+      context 'params is empty' do
+        let(:parameters) { nil }
+
+        it 'creates an empty array' do
+          expect(subject).to eq([])
+        end
       end
-    end
 
-    context 'templated params' do
-      let(:parameters) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
-      let(:environment_parameters) { { "stack_name" => "okonomiyaki" } }
+      context 'a hard-coded param' do
+          # let(:parameters) { { "parameter_key" => 'parameter_value' } }
+        let(:parameters) { ERB.new("stack_name: \"foo-stack\"") } #{ "stack_name" => 'foo-stack' } }
+        let(:parameters) { ERB.new("parameter_key: \"parameter_value\"") }
 
-      context 'environment params' do
+        before do
+          allow(file_loader).to receive(:load_hash).with('common.yml', optional=true).and_return({})
+          allow(file_loader).to receive(:load_hash).with('the_jungle.yml', optional=true).and_return({})
+          allow(file_loader).to receive(:load_hash).with('development.yml', optional=true).and_return({})
+        end
+
         it 'creates a array containing an aws formatted parameter hash' do
-          expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return({})
-          expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return(environment_parameters)
-
-          expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "okonomiyaki"}])
+          expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: "parameter_value"}])
         end
       end
     end
 
-    context 'reading params from config' do
-      let(:parameter_template) { "parameter_key: <%= config['param'] %>" }
-      let(:the_value) { "food" }
-      before { allow(environment_config).to receive(:config).and_return({'param' => the_value})}
+    context 'integration tests' do
 
-      it "renders the config value" do
-        expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: the_value}])
+      describe '#cf_params' do
+        subject { environment_config.cf_params }
+
+      context 'templated params' do
+        let(:parameters) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
+        let(:common_parameters) { { "stack_name" => "common"} }
+        let(:environment_parameters) { { "stack_name" => "environment" } }
+        let(:development_parameters) { { "stack_name" => "development" } }
+
+        # context 'common params' do
+        context 'hiearchy of parameters' do
+          it 'will load values from the common paramater file' do
+            expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return(common_parameters)
+            expect(file_loader).to receive(:load_hash).with("development.yml", optional = true).and_return({})
+            expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return({})
+            expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "common"}])
+          end
+
+        # context 'environment specific params' do
+          it 'will load values from the environment specific file' do
+            expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return({})
+            expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return(environment_parameters)
+            expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "environment"}])
+          end
+
+          it 'will load values from the shared development file if an environment specific file has no values' do
+            expect(file_loader).to receive(:load_hash).with('common.yml', optional = true).and_return({})
+            expect(file_loader).to receive(:load_hash).with(environment_config_file_name, optional = true).and_return({})
+            expect(file_loader).to receive(:load_hash).with("development.yml", optional = true).and_return(development_parameters)
+            expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "development"}])
+          end
+        end
+        # end
+# end
+      end
       end
     end
   end
