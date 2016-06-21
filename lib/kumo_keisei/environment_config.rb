@@ -6,6 +6,7 @@ require_relative 'file_loader'
 require_relative 'parameter_builder'
 
 module KumoKeisei
+  # Environment Configuration for a cloud formation stack
   class EnvironmentConfig
     LOGGER = Logger.new(STDOUT)
 
@@ -23,11 +24,11 @@ module KumoKeisei
     end
 
     def production?
-      env_name == "production"
+      env_name == 'production'
     end
 
     def development?
-      !(%w(production staging).include?(env_name))
+      !%w(production staging).include? env_name
     end
 
     def plain_text_secrets
@@ -64,18 +65,22 @@ module KumoKeisei
       Hash[
         secrets.map do |name, cipher_text|
           @log.debug "Decrypting '#{name}'"
-          if cipher_text.start_with? '[ENC,'
-            begin
-              [name, "#{kms.decrypt cipher_text[5,cipher_text.size]}"]
-            rescue
-              @log.error "Error decrypting secret '#{name}'"
-              raise
-            end
-          else
-            [name, cipher_text]
-          end
+          decrypt_cipher name, cipher_text
         end
       ]
+    end
+
+    def decrypt_cipher(name, cipher_text)
+      if cipher_text.start_with? '[ENC,'
+        begin
+          [name, kms.decrypt(cipher_text[5, cipher_text.size]).to_s]
+        rescue
+          @log.error "Error decrypting secret '#{name}'"
+          raise
+        end
+      else
+        [name, cipher_text]
+      end
     end
 
     def env_config_file_name
