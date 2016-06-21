@@ -21,10 +21,6 @@ class KumoKeisei::EnvironmentConfig
     @log = logger
   end
 
-  def get_binding
-    binding()
-  end
-
   def production?
     env_name == "production"
   end
@@ -48,7 +44,7 @@ class KumoKeisei::EnvironmentConfig
     return [] unless params
     load_config
 
-    stack_params = YAML.load(params.result(binding()))
+    stack_params = YAML.load(params.result(binding))
     KumoKeisei::ParameterBuilder.new(stack_params).params
   end
 

@@ -27,10 +27,6 @@ describe KumoKeisei::EnvironmentConfig do
   context 'unit tests' do
     let(:fake_environment_binding) { binding }
 
-    before do
-      allow(environment_config).to receive(:get_binding).and_return(fake_environment_binding)
-    end
-
     describe '#cf_params' do
       subject { environment_config.cf_params }
 
