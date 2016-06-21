@@ -22,7 +22,7 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def get_binding
-    binding
+    binding()
   end
 
   def production?
@@ -46,12 +46,9 @@ class KumoKeisei::EnvironmentConfig
     # returns a list of Cfn friendly paramater_value, paramater_key pairs for
     # consumption by cloudformation.
     return [] unless params
-    # stack_params = get_stack_params(params)
     load_config
-    puts 'AAA'
-    puts config
-    puts 'BBB'
-    stack_params = YAML.load(params.result(get_binding))
+
+    stack_params = YAML.load(params.result(binding()))
     KumoKeisei::ParameterBuilder.new(stack_params).params
   end
 
@@ -64,16 +61,6 @@ class KumoKeisei::EnvironmentConfig
   def kms
     @kms ||= KumoKi::KMS.new
   end
-
-  # def get_stack_params(params)
-  #   puts 'LOLOLOLOLOL'
-  #   puts params
-  #   puts 'YOLO'
-  #   # require pry; binding.pry
-  #   erb = ERB.new(params)
-  #   puts erb
-  #   YAML.load(erb.result(get_binding))
-  # end
 
   def params
     return nil unless @params_template_file_path
@@ -129,9 +116,7 @@ class KumoKeisei::EnvironmentConfig
   end
 
   def env_config
-    puts 'env_config'
     config = @file_loader.load_hash(env_config_file_name, optional=true)
-    puts config
     if !config.empty?
       config
     else
