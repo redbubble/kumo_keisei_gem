@@ -52,8 +52,7 @@ describe KumoKeisei::EnvironmentConfig do
       end
 
       context 'a hard-coded param' do
-          # let(:parameters) { { "parameter_key" => 'parameter_value' } }
-        let(:parameters) { ERB.new("stack_name: \"foo-stack\"") } #{ "stack_name" => 'foo-stack' } }
+        let(:parameters) { ERB.new("stack_name: \"foo-stack\"") }
         let(:parameters) { ERB.new("parameter_key: \"parameter_value\"") }
 
         before do
@@ -73,38 +72,34 @@ describe KumoKeisei::EnvironmentConfig do
       describe '#cf_params' do
         subject { environment_config.cf_params }
 
-      context 'templated params' do
-        let(:parameters) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
-        let(:common_parameters) { { "stack_name" => "common"} }
-        let(:environment_parameters) { { "stack_name" => "environment" } }
-        let(:development_parameters) { { "stack_name" => "development" } }
+        context 'templated params' do
+          let(:parameters) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
+          let(:common_parameters) { { "stack_name" => "common"} }
+          let(:environment_parameters) { { "stack_name" => "environment" } }
+          let(:development_parameters) { { "stack_name" => "development" } }
 
-        # context 'common params' do
-        context 'hiearchy of parameters' do
-          it 'will load values from the common paramater file' do
-            expect(file_loader).to receive(:load_hash).with('common.yml').and_return(common_parameters)
-            expect(file_loader).to receive(:load_hash).with("development.yml").and_return({})
-            expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
-            expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "common"}])
-          end
+          context 'hiearchy of parameters' do
+            it 'will load values from the common paramater file' do
+              expect(file_loader).to receive(:load_hash).with('common.yml').and_return(common_parameters)
+              expect(file_loader).to receive(:load_hash).with("development.yml").and_return({})
+              expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
+              expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "common"}])
+            end
 
-        # context 'environment specific params' do
-          it 'will load values from the environment specific file' do
-            expect(file_loader).to receive(:load_hash).with('common.yml').and_return({})
-            expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return(environment_parameters)
-            expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "environment"}])
-          end
+            it 'will load values from the environment specific file' do
+              expect(file_loader).to receive(:load_hash).with('common.yml').and_return({})
+              expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return(environment_parameters)
+              expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "environment"}])
+            end
 
-          it 'will load values from the shared development file if an environment specific file has no values' do
-            expect(file_loader).to receive(:load_hash).with('common.yml').and_return({})
-            expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
-            expect(file_loader).to receive(:load_hash).with("development.yml").and_return(development_parameters)
-            expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "development"}])
+            it 'will load values from the shared development file if an environment specific file has no values' do
+              expect(file_loader).to receive(:load_hash).with('common.yml').and_return({})
+              expect(file_loader).to receive(:load_hash).with(environment_config_file_name).and_return({})
+              expect(file_loader).to receive(:load_hash).with("development.yml").and_return(development_parameters)
+              expect(subject).to eq([{parameter_key: "stack_name", parameter_value: "development"}])
+            end
           end
         end
-        # end
-# end
-      end
       end
     end
   end
