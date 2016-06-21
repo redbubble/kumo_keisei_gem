@@ -11,7 +11,7 @@ describe KumoKeisei::EnvironmentConfig do
     }
   end
   let(:file_loader) { instance_double(KumoKeisei::FileLoader) }
-  let(:parameters) { ERB.new("") } #{ "stack_name" => 'foo-stack' } }
+  let(:parameters) { ERB.new("") }
   let(:params_template_file_path) { '/junk.txt' }
   let(:environment_config_file_name) { "#{env_name}.yml" }
   let(:kms) { instance_double(KumoKi::KMS) }

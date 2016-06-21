@@ -20,11 +20,10 @@ module KumoKeisei
       end
     end
 
-    def load_erb(file_name, optional = false)
+    def load_erb(file_name)
       # loads a file, constructs an ERB object from it and returns the ERB object
+      # DOES NOT RENDER A RESULT!!
       path = file_path(file_name)
-      raise unless File.exist?(path) or optional
-
       ERB.new(File.read(path))
     end
 
