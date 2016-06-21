@@ -7,11 +7,17 @@ module KumoKeisei
     def load_hash(file_name, optional = false)
       # reads a file presuming it's a yml in form of key: value, returning it as a hash
       path = file_path(file_name)
-      raise unless File.exist?(path) or optional
 
-      return {} unless  File.exist?(path)
-
-      YAML::load(File.read(path))
+      begin
+        YAML::load(File.read(path))
+      rescue Errno::ENOENT => ex
+        # file not found, return empty dictionary if that is ok
+        return {} if optional
+        raise ex
+      rescue Exception => ex
+        # this is an error we weren't expecting
+        raise ex
+      end
     end
 
     def load_erb(file_name, optional = false)
