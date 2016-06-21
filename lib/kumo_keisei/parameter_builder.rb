@@ -21,11 +21,11 @@ module KumoKeisei
     end
 
     def parsed_file_params
-      return [] unless (@file_path && File.exists?(@file_path))
+      return [] unless (@file_path && File.exist?(@file_path))
 
       file_contents = JSON.parse(File.read(@file_path))
 
-      file_contents.map do |param| 
+      file_contents.map do |param|
         {
           parameter_key: param["ParameterKey"],
           parameter_value: param["ParameterValue"]
