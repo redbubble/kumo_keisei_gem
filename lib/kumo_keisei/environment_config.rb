@@ -13,12 +13,10 @@ module KumoKeisei
     attr_reader :app_name, :env_name
 
     def initialize(options, logger = LOGGER)
-      @app_name = options[:app_name]
       @env_name = options[:env_name]
-      @config_dir_path = options[:config_dir_path]
       @params_template_file_path = options[:params_template_file_path]
       @injected_config = options[:injected_config] || {}
-      @file_loader = KumoKeisei::FileLoader.new(options)
+      @file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_path])
 
       @log = logger
     end
