@@ -27,11 +27,11 @@ module KumoKeisei
       self.new(stack_name, nil).exists?
     end
 
-    def initialize(app_name, environment_name)
+    def initialize(app_name, environment_name, confirmation_timeout = 0.5)
       @app_name = app_name
       @stack_name = "#{app_name}-#{environment_name}"
       @environment_name = environment_name
-      @confirmation_timeout = 0.5
+      @confirmation_timeout = confirmation_timeout
     end
 
     def apply!(stack_config)
