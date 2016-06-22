@@ -23,8 +23,8 @@ module KumoKeisei
 
     attr_reader :stack_name
 
-    def self.exists?(stack_name)
-      self.new(stack_name, nil).exists?
+    def self.exists?(app_name, environment_name)
+      self.new(app_name, environment_name).exists?
     end
 
     def initialize(app_name, environment_name, confirmation_timeout = 0.5)
