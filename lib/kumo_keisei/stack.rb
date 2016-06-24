@@ -29,8 +29,9 @@ module KumoKeisei
 
     def initialize(app_name, environment_name, confirmation_timeout = 0.5)
       @app_name = app_name
-      @stack_name = "#{app_name}-#{environment_name}"
-      @environment_name = environment_name
+      @environment_name = environment_name == 'production' ? 'production' : 'non-production'
+      @stack_name = "#{app_name}-#{ @environment_name }"
+      @vpc_stack_name = "redbubble-vpc-#{ @environment_name }"
       @confirmation_timeout = confirmation_timeout
     end
 

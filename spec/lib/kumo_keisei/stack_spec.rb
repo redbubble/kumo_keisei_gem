@@ -9,7 +9,7 @@ describe KumoKeisei::Stack do
   end
 
   let(:app_name) { "my-stack" }
-  let(:environment_name) { 'fred' }
+  let(:environment_name) { 'non-production' }
   let(:stack_name) { "#{app_name}-#{environment_name}" }
   let(:stack_template_path) { "#{app_name}-#{environment_name}.json" }
   let(:file_params_path) { nil }
@@ -203,8 +203,7 @@ describe KumoKeisei::Stack do
       end
 
       context "a stack name that is too long" do
-        let(:app_name) { "long-stack-name" }
-        let(:environment_name) { "that-will-make-aws-barf" }
+        let(:app_name) { "this-will-create-a-very-long-stack-name-that-will-break-aws" }
 
         it "blows up since the ELB names have to be 32 or shorter" do
           allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name)
