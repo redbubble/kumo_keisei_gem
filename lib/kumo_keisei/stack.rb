@@ -55,7 +55,9 @@ module KumoKeisei
     end
 
     def outputs(output)
-      outputs_hash = get_stack.outputs.reduce({}) { |acc, o| acc.merge(o.output_key.to_s => o.output_value) }
+      stack = get_stack
+      return nil if stack.nil?
+      outputs_hash = stack.outputs.reduce({}) { |acc, o| acc.merge(o.output_key.to_s => o.output_value) }
 
       outputs_hash[output]
     end

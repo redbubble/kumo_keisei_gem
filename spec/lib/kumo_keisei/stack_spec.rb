@@ -217,13 +217,22 @@ describe KumoKeisei::Stack do
     end
 
     describe "#outputs" do
-      let(:output) { double(:output, output_key: "Key", output_value: "Value") }
-      let(:stack) { double(:stack, stack_name: stack_name, outputs: [output])}
-      let(:stack_result) { double(:stack_result, stacks: [stack]) }
+      context 'when the stack exists' do
+        let(:output) { double(:output, output_key: "Key", output_value: "Value") }
+        let(:stack) { double(:stack, stack_name: stack_name, outputs: [output])}
+        let(:stack_result) { double(:stack_result, stacks: [stack]) }
 
-      it "returns the outputs given by CloudFormation" do
-        allow(cloudformation).to receive(:describe_stacks).and_return(stack_result)
-        expect(subject.outputs("Key")).to eq("Value")
+        it "returns the outputs given by CloudFormation" do
+          allow(cloudformation).to receive(:describe_stacks).and_return(stack_result)
+          expect(subject.outputs("Key")).to eq("Value")
+        end
+      end
+
+      context 'when the stack does not exist' do
+        it 'returns nil' do
+          allow(subject).to receive(:get_stack).and_return(nil)
+          expect(subject.outputs('Key')).to be_nil
+        end
       end
     end
 
