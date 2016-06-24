@@ -21,7 +21,7 @@ module KumoKeisei
       'UPDATE_ROLLBACK_FAILED'
     ]
 
-    attr_reader :stack_name
+    attr_reader :stack_name, :env_name
 
     def self.exists?(app_name, environment_name)
       self.new(app_name, environment_name).exists?
@@ -29,9 +29,9 @@ module KumoKeisei
 
     def initialize(app_name, environment_name, confirmation_timeout = 0.5)
       @app_name = app_name
-      @environment_name = environment_name == 'production' ? 'production' : 'non-production'
-      @stack_name = "#{app_name}-#{ @environment_name }"
-      @vpc_stack_name = "redbubble-vpc-#{ @environment_name }"
+      @env_name = environment_name
+      @stack_name = "#{app_name}-#{ environment_name }"
+      @vpc_stack_name = "redbubble-vpc-#{ environment_name == 'production' ? 'production' : 'non-production' }"
       @confirmation_timeout = confirmation_timeout
     end
 
