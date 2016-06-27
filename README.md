@@ -58,16 +58,4 @@ Changes to the gem can be manually tested end to end in a project that uses the 
 1. Re-install the gem: `gem specific_install https://github.com/redbubble/kumo_keisei_gem.git -b <your_branch>`
 1. Fire up a console: `irb`
 1. Require the gem: `require "kumo_keisei"`
-1. Interact with the gem's classes. `KumoKeisei::CloudFormationStack.new(...).apply!`
-
-## Testing changes by deploying a stack
-
-1. Turn off auto-updating by setting `KUMOTOOLS_ENABLE_PULL=1` in `~/.kumo/kumorc`
-1. Start the dev-tools container: `kumo tools debug non-production`
-1. Uninstall the kumo_keisei gem from the container
-1. Build the gem locally: `gem build kumo_keisei.gemspec`
-1. Get the kumo tools container id: `docker ps | grep "kumo-tools"`
-1. Copy the gem into the container: `docker cp kumo_keisei-x.x.x.gem <container-id>:/app`
-1. Switch to the kumo-tools shell, uninstall the old gem: `gem uninstall kumo_keisei` and install the gem: `gem install kumo\_keisei-x.x.x.gem`
-1. Commit the docker container: `docker commit <container-id> redbubble/kumo-tools:latest`
-1. Test the deploy by running `kumo apply-env <env-name>`
+1. Interact with the gem's classes. `KumoKeisei::Stack.new(...).apply!`
