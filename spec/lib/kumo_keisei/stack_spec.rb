@@ -29,13 +29,14 @@ describe KumoKeisei::Stack do
   let(:cf_stack_create_params) do
     cf_stack_update_params.merge(on_failure: "DELETE")
   end
-  let(:confirmation_timeout) { 0.5 }
+  let(:confirmation_timeout) { 30 }
   subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name) }
   let(:stack_config) {
     {
       config_path: 'config-path',
       template_path: stack_template_path,
-      injected_config: { 'VpcId' => 'vpc-id' }
+      injected_config: { 'VpcId' => 'vpc-id' },
+      env_name: 'non-production'
     }
   }
 
