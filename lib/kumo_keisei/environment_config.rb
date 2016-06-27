@@ -16,7 +16,8 @@ module KumoKeisei
       @env_name = options[:env_name]
       @params_template_file_path = options[:params_template_file_path]
       @injected_config = options[:injected_config] || {}
-      @file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_path])
+      @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_path])
+      @template_file_loader = KumoKeisei::FileLoader.new(config_dir_path: File.dirname(options[:params_template_file_path]))
 
       @log = logger
     end
@@ -56,7 +57,7 @@ module KumoKeisei
 
     def params
       return nil unless @params_template_file_path
-      @file_loader.load_erb(@params_template_file_path)
+      @template_file_loader.load_erb(File.basename(@params_template_file_path))
     end
 
     def decrypt_secrets(secrets)
@@ -94,29 +95,29 @@ module KumoKeisei
     end
 
     def encrypted_common_secrets
-      @file_loader.load_hash('common_secrets.yml')
+      @config_file_loader.load_hash('common_secrets.yml')
     end
 
     def encrypted_env_secrets
-      secrets = @file_loader.load_hash(env_secrets_file_name)
+      secrets = @config_file_loader.load_hash(env_secrets_file_name)
 
       if !secrets.empty?
         secrets
       else
-        @file_loader.load_hash('development_secrets.yml')
+        @config_file_loader.load_hash('development_secrets.yml')
       end
     end
 
     def common_config
-      @file_loader.load_hash('common.yml')
+      @config_file_loader.load_hash('common.yml')
     end
 
     def env_config
-      config = @file_loader.load_hash(env_config_file_name)
+      config = @config_file_loader.load_hash(env_config_file_name)
       if !config.empty?
         config
       else
-        @file_loader.load_hash('development.yml')
+        @config_file_loader.load_hash('development.yml')
       end
     end
   end

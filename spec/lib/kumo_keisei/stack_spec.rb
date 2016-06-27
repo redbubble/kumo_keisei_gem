@@ -9,7 +9,7 @@ describe KumoKeisei::Stack do
   end
 
   let(:app_name) { "my-stack" }
-  let(:environment_name) { 'fred' }
+  let(:environment_name) { 'non-production' }
   let(:stack_name) { "#{app_name}-#{environment_name}" }
   let(:stack_template_path) { "#{app_name}-#{environment_name}.json" }
   let(:file_params_path) { nil }
@@ -29,13 +29,14 @@ describe KumoKeisei::Stack do
   let(:cf_stack_create_params) do
     cf_stack_update_params.merge(on_failure: "DELETE")
   end
-  let(:confirmation_timeout) { 0.5 }
+  let(:confirmation_timeout) { 30 }
   subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name) }
   let(:stack_config) {
     {
       config_path: 'config-path',
       template_path: stack_template_path,
-      injected_config: { 'VpcId' => 'vpc-id' }
+      injected_config: { 'VpcId' => 'vpc-id' },
+      env_name: 'non-production'
     }
   }
 
@@ -203,8 +204,7 @@ describe KumoKeisei::Stack do
       end
 
       context "a stack name that is too long" do
-        let(:app_name) { "long-stack-name" }
-        let(:environment_name) { "that-will-make-aws-barf" }
+        let(:app_name) { "this-will-create-a-very-long-stack-name-that-will-break-aws" }
 
         it "blows up since the ELB names have to be 32 or shorter" do
           allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name)
@@ -217,13 +217,22 @@ describe KumoKeisei::Stack do
     end
 
     describe "#outputs" do
-      let(:output) { double(:output, output_key: "Key", output_value: "Value") }
-      let(:stack) { double(:stack, stack_name: stack_name, outputs: [output])}
-      let(:stack_result) { double(:stack_result, stacks: [stack]) }
+      context 'when the stack exists' do
+        let(:output) { double(:output, output_key: "Key", output_value: "Value") }
+        let(:stack) { double(:stack, stack_name: stack_name, outputs: [output])}
+        let(:stack_result) { double(:stack_result, stacks: [stack]) }
 
-      it "returns the outputs given by CloudFormation" do
-        allow(cloudformation).to receive(:describe_stacks).and_return(stack_result)
-        expect(subject.outputs("Key")).to eq("Value")
+        it "returns the outputs given by CloudFormation" do
+          allow(cloudformation).to receive(:describe_stacks).and_return(stack_result)
+          expect(subject.outputs("Key")).to eq("Value")
+        end
+      end
+
+      context 'when the stack does not exist' do
+        it 'returns nil' do
+          allow(subject).to receive(:get_stack).and_return(nil)
+          expect(subject.outputs('Key')).to be_nil
+        end
       end
     end
 

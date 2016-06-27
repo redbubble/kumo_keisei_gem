@@ -11,8 +11,9 @@ describe KumoKeisei::EnvironmentConfig do
     }
   end
   let(:file_loader) { instance_double(KumoKeisei::FileLoader) }
+  let(:file_loader_cloudformation) { instance_double(KumoKeisei::FileLoader) }
   let(:parameters) { ERB.new("") }
-  let(:params_template_file_path) { '/junk.txt' }
+  let(:params_template_file_path) { 'junk.txt' }
   let(:environment_config_file_name) { "#{env_name}.yml" }
   let(:kms) { instance_double(KumoKi::KMS) }
   let(:logger) { double(:test_logger, debug: nil) }
@@ -22,6 +23,7 @@ describe KumoKeisei::EnvironmentConfig do
     allow(KumoKeisei::FileLoader).to receive(:new).and_return(file_loader)
     allow(KumoKi::KMS).to receive(:new).and_return(kms)
     allow(file_loader).to receive(:load_erb).with(params_template_file_path).and_return(parameters)
+    allow(File).to receive(:dirname).and_return('/tmp')
   end
 
   context 'unit tests' do

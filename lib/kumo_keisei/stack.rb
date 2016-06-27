@@ -21,20 +21,23 @@ module KumoKeisei
       'UPDATE_ROLLBACK_FAILED'
     ]
 
-    attr_reader :stack_name
+    attr_reader :stack_name, :env_name
 
     def self.exists?(app_name, environment_name)
       self.new(app_name, environment_name).exists?
     end
 
-    def initialize(app_name, environment_name, confirmation_timeout = 0.5)
+    def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90} )
       @app_name = app_name
-      @stack_name = "#{app_name}-#{environment_name}"
-      @environment_name = environment_name
-      @confirmation_timeout = confirmation_timeout
+      @env_name = environment_name
+      @stack_name = "#{app_name}-#{ environment_name }"
+      @confirmation_timeout = options[:confirmation_timeout]
+      @waiter_delay = options[:waiter_delay]
+      @waiter_attempts = options[:waiter_attempts]
     end
 
     def apply!(stack_config)
+      stack_config.merge!(env_name: @env_name)
       if updatable?
         update!(stack_config)
       else
@@ -55,7 +58,9 @@ module KumoKeisei
     end
 
     def outputs(output)
-      outputs_hash = get_stack.outputs.reduce({}) { |acc, o| acc.merge(o.output_key.to_s => o.output_value) }
+      stack = get_stack
+      return nil if stack.nil?
+      outputs_hash = stack.outputs.reduce({}) { |acc, o| acc.merge(o.output_key.to_s => o.output_value) }
 
       outputs_hash[output]
     end
@@ -95,7 +100,7 @@ module KumoKeisei
 
       ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
       cloudformation.delete_stack(stack_name: @stack_name)
-      cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = 20; waiter.max_attempts = 45 }
+      cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = @waiter_delay; waiter.max_attempts = @waiter_attempts }
     end
 
     def updatable?
@@ -123,7 +128,7 @@ module KumoKeisei
       )
 
       begin
-        cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = 20; waiter.max_attempts = 45 }
+        cloudformation.wait_until(:stack_create_complete, stack_name: @stack_name) { |waiter| waiter.delay = @waiter_delay; waiter.max_attempts = @waiter_attempts }
       rescue Aws::Waiters::Errors::UnexpectedError => ex
         handle_unexpected_error(ex)
       end
@@ -141,7 +146,7 @@ module KumoKeisei
         capabilities: ["CAPABILITY_IAM"]
       )
 
-      cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = 20; waiter.max_attempts = 45 }
+      cloudformation.wait_until(:stack_update_complete, stack_name: @stack_name) { |waiter| waiter.delay = @waiter_delay; waiter.max_attempts = @waiter_attempts }
     rescue Aws::CloudFormation::Errors::ValidationError => ex
       raise ex unless ex.message == "No updates are to be performed."
       ConsoleJockey.write_line "No changes need to be applied for #{@stack_name}."
