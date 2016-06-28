@@ -31,6 +31,7 @@ module KumoKeisei
       self.new(stack_name, nil).exists?
     end
 
+    # <b>DEPRECATED:</b> Please use <tt>Stack</tt> class instead of the <tt>CloudFormationStack</tt> class.
     def initialize(stack_name, stack_template, stack_params_filepath = nil, confirmation_timeout=30)
       @stack_name = stack_name
       @stack_template = stack_template
