@@ -38,7 +38,6 @@ module KumoKeisei
     end
 
     def apply!
-      config
       if updatable?
         update!
       else
