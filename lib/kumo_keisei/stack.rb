@@ -27,23 +27,24 @@ module KumoKeisei
       self.new(app_name, environment_name).exists?
     end
 
-    def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90} )
+    def initialize(app_name, environment_name, config, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90} )
       @app_name = app_name
       @env_name = environment_name
       @stack_name = "#{app_name}-#{ environment_name }"
       @confirmation_timeout = options[:confirmation_timeout]
       @waiter_delay = options[:waiter_delay]
       @waiter_attempts = options[:waiter_attempts]
+      @config = config.merge(env_name: @env_name)
     end
 
-    def apply!(stack_config)
-      stack_config.merge!(env_name: @env_name)
+    def apply!
+      config
       if updatable?
-        update!(stack_config)
+        update!
       else
         ensure_deleted!
         ConsoleJockey.write_line "Creating your new stack #{@stack_name}"
-        create!(stack_config)
+        create!
       end
     end
 
@@ -76,6 +77,8 @@ module KumoKeisei
     end
 
     private
+
+    attr_reader :config
 
     def transform_logical_resource_id(id)
       id.to_s.split('_').map {|w| w.capitalize }.join
@@ -113,16 +116,13 @@ module KumoKeisei
       raise UpdateError.new("Stack is busy, try again soon")
     end
 
-    def create!(stack_config)
+    def create!
       raise StackValidationError.new("The stack name needs to be 32 characters or shorter") if @stack_name.length > 32
-
-      params_template_path = File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb"))
-      config = EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path))
 
       cloudformation.create_stack(
         stack_name: @stack_name,
-        template_body: File.read(stack_config[:template_path]),
-        parameters: config.cf_params,
+        template_body: File.read(config[:template_path]),
+        parameters: environment_config.cf_params,
         capabilities: ["CAPABILITY_IAM"],
         on_failure: "DELETE"
       )
@@ -134,15 +134,13 @@ module KumoKeisei
       end
     end
 
-    def update!(stack_config)
-      params_template_path = File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb"))
-      config = EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path))
+    def update!
       wait_until_ready(false)
 
       cloudformation.update_stack(
         stack_name: @stack_name,
-        template_body: File.read(stack_config[:template_path]),
-        parameters: config.cf_params,
+        template_body: File.read(config[:template_path]),
+        parameters: environment_config.cf_params,
         capabilities: ["CAPABILITY_IAM"]
       )
 
@@ -154,6 +152,11 @@ module KumoKeisei
       ConsoleJockey.write_line "Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates."
       ConsoleJockey.write_line "Find error details in the AWS CloudFormation console: #{stack_events_url}"
       raise UpdateError.new("Stack update failed for #{@stack_name}.")
+    end
+
+    def environment_config
+      params_template_path = File.absolute_path(File.join(File.dirname(config[:template_path]), "#{@app_name}.yml.erb"))
+      EnvironmentConfig.new(config.merge(params_template_file_path: params_template_path))
     end
 
     def stack_events_url

@@ -30,7 +30,6 @@ describe KumoKeisei::Stack do
     cf_stack_update_params.merge(on_failure: "DELETE")
   end
   let(:confirmation_timeout) { 30 }
-  subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name) }
   let(:stack_config) {
     {
       config_path: 'config-path',
@@ -39,6 +38,7 @@ describe KumoKeisei::Stack do
       env_name: 'non-production'
     }
   }
+  subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name, stack_config) }
 
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
@@ -88,7 +88,7 @@ describe KumoKeisei::Stack do
                                        stack_result_list_with_status("UPDATE_COMPLETE", stack_name)
                                      )
             expect(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_return("stack_id")
-            subject.apply!(stack_config)
+            subject.apply!
           end
         end
 
@@ -100,7 +100,7 @@ describe KumoKeisei::Stack do
           allow(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_return("stack_id")
           expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with("Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates.")
 
-          expect { subject.apply!(stack_config) }.to raise_error(KumoKeisei::Stack::UpdateError)
+          expect { subject.apply! }.to raise_error(KumoKeisei::Stack::UpdateError)
         end
       end
 
@@ -115,7 +115,7 @@ describe KumoKeisei::Stack do
 
             expect(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_raise(error)
 
-            subject.apply!(stack_config)
+            subject.apply!
           end
         end
       end
@@ -134,7 +134,7 @@ describe KumoKeisei::Stack do
           expect(cloudformation).not_to receive(:delete_stack)
           allow(cloudformation).to receive(:describe_stacks).with(stack_name: stack_name).and_return(stack_result_list_with_status('DELETE_COMPLETE', stack_name))
           expect(cloudformation).to receive(:create_stack).with(cf_stack_create_params)
-          subject.apply!(stack_config)
+          subject.apply!
         end
       end
 
@@ -143,7 +143,7 @@ describe KumoKeisei::Stack do
           allow(cloudformation).to receive(:delete_stack)
           allow(cloudformation).to receive(:describe_stacks).with(stack_name: stack_name).and_raise(Aws::CloudFormation::Errors::ValidationError.new('',''))
           expect(cloudformation).to receive(:create_stack).with(cf_stack_create_params)
-          subject.apply!(stack_config)
+          subject.apply!
         end
 
         it "shows a friendly error message if the stack had issues during creation" do
@@ -163,7 +163,7 @@ describe KumoKeisei::Stack do
           allow(cloudformation).to receive(:wait_until).with(:stack_create_complete, stack_name: stack_name).and_raise(error)
 
           expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with(/There was an error during stack creation for #{stack_name}, and the stack has been cleaned up./).and_return nil
-          expect { subject.apply!(stack_config) }.to raise_error(KumoKeisei::Stack::CreateError)
+          expect { subject.apply! }.to raise_error(KumoKeisei::Stack::CreateError)
         end
       end
 
@@ -176,7 +176,7 @@ describe KumoKeisei::Stack do
 
           allow(cloudformation).to receive(:wait_until).with(:stack_create_complete, stack_name: stack_name).and_return(nil)
 
-          subject.apply!(stack_config)
+          subject.apply!
         end
       end
 
@@ -184,7 +184,7 @@ describe KumoKeisei::Stack do
         it "should blow up" do
           allow(cloudformation).to receive(:describe_stacks).and_return(stack_result_list_with_status("UPDATE_ROLLBACK_FAILED", stack_name))
 
-          expect { subject.apply!(stack_config) }.to raise_error("Stack is in an unrecoverable state")
+          expect { subject.apply! }.to raise_error("Stack is in an unrecoverable state")
         end
       end
 
@@ -192,7 +192,7 @@ describe KumoKeisei::Stack do
         it "should blow up" do
           allow(cloudformation).to receive(:describe_stacks).and_return(stack_result_list_with_status("UPDATE_IN_PROGRESS", stack_name))
 
-          expect { subject.apply!(stack_config) }.to raise_error("Stack is busy, try again soon")
+          expect { subject.apply! }.to raise_error("Stack is busy, try again soon")
         end
       end
 
@@ -200,7 +200,7 @@ describe KumoKeisei::Stack do
         allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name)
         allow(cloudformation).to receive(:update_stack)
 
-        subject.apply!(stack_config)
+        subject.apply!
       end
 
       context "a stack name that is too long" do
@@ -211,7 +211,7 @@ describe KumoKeisei::Stack do
           allow(cloudformation).to receive(:update_stack)
           allow(subject).to receive(:updatable?).and_return(false)
 
-          expect { subject.apply!(stack_config) }.to raise_error(KumoKeisei::StackValidationError, "The stack name needs to be 32 characters or shorter")
+          expect { subject.apply! }.to raise_error(KumoKeisei::StackValidationError, "The stack name needs to be 32 characters or shorter")
         end
       end
     end
