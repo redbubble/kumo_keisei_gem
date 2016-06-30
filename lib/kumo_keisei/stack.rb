@@ -116,13 +116,10 @@ module KumoKeisei
     def create!(stack_config)
       raise StackValidationError.new("The stack name needs to be 32 characters or shorter") if @stack_name.length > 32
 
-      params_template_path = File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb"))
-      config = EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path))
-
       cloudformation.create_stack(
         stack_name: @stack_name,
         template_body: File.read(stack_config[:template_path]),
-        parameters: config.cf_params,
+        parameters: environment_config(stack_config).cf_params,
         capabilities: ["CAPABILITY_IAM"],
         on_failure: "DELETE"
       )
@@ -135,14 +132,12 @@ module KumoKeisei
     end
 
     def update!(stack_config)
-      params_template_path = File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb"))
-      config = EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path))
       wait_until_ready(false)
 
       cloudformation.update_stack(
         stack_name: @stack_name,
         template_body: File.read(stack_config[:template_path]),
-        parameters: config.cf_params,
+        parameters: environment_config(stack_config).cf_params,
         capabilities: ["CAPABILITY_IAM"]
       )
 
@@ -154,6 +149,11 @@ module KumoKeisei
       ConsoleJockey.write_line "Failed to apply the environment update. The stack has been rolled back. It is still safe to apply updates."
       ConsoleJockey.write_line "Find error details in the AWS CloudFormation console: #{stack_events_url}"
       raise UpdateError.new("Stack update failed for #{@stack_name}.")
+    end
+
+    def environment_config(stack_config)
+      params_template_path = File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb"))
+      EnvironmentConfig.new(config.merge(params_template_file_path: params_template_path))
     end
 
     def stack_events_url
