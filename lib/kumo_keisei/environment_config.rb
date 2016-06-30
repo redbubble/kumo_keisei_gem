@@ -49,6 +49,10 @@ module KumoKeisei
       KumoKeisei::ParameterBuilder.new(stack_params).params
     end
 
+    def get_binding
+      binding
+    end
+
     private
 
     def kms
