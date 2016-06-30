@@ -153,7 +153,7 @@ module KumoKeisei
 
     def environment_config(stack_config)
       params_template_path = File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb"))
-      EnvironmentConfig.new(config.merge(params_template_file_path: params_template_path))
+      EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path))
     end
 
     def stack_events_url
