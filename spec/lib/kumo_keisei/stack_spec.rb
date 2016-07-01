@@ -260,7 +260,7 @@ describe KumoKeisei::Stack do
       end
 
       it "embeds the type into the name of the stack if set" do
-        subject = KumoKeisei::Stack.new(app_name, environment_name, type = "vpc")
+        subject = KumoKeisei::Stack.new(app_name, environment_name, { type: "vpc" } )
         expect(subject.stack_name).to eq("#{app_name}-vpc-#{environment_name}")
       end
     end

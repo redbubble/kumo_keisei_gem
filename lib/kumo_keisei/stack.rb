@@ -27,9 +27,10 @@ module KumoKeisei
       self.new(app_name, environment_name).exists?
     end
 
-    def initialize(app_name, environment_name, type = 'nodes', options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90})
-      @app_name = app_name
+    def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90 })
+      type = options.fetch(:type, 'nodes')
       @env_name = environment_name
+      @app_name = app_name
       @stack_name = "#{app_name}-#{type}-#{ environment_name }"
       @confirmation_timeout = options[:confirmation_timeout]
       @waiter_delay = options[:waiter_delay]
