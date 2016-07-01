@@ -30,7 +30,7 @@ module KumoKeisei
     def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90} )
       @app_name = app_name
       @env_name = environment_name
-      @stack_name = "#{app_name}-#{ environment_name }"
+      @stack_name = "#{app_name}-nodes-#{ environment_name }"
       @confirmation_timeout = options[:confirmation_timeout]
       @waiter_delay = options[:waiter_delay]
       @waiter_attempts = options[:waiter_attempts]

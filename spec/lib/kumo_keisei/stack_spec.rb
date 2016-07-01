@@ -10,7 +10,7 @@ describe KumoKeisei::Stack do
 
   let(:app_name) { "my-stack" }
   let(:environment_name) { 'non-production' }
-  let(:stack_name) { "#{app_name}-#{environment_name}" }
+  let(:stack_name) { "#{app_name}-nodes-#{environment_name}" }
   let(:stack_template_path) { "#{app_name}-#{environment_name}.json" }
   let(:file_params_path) { nil }
   let(:cloudformation) { instance_double(Aws::CloudFormation::Client) }
