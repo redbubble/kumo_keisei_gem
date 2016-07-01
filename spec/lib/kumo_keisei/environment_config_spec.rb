@@ -29,6 +29,14 @@ describe KumoKeisei::EnvironmentConfig do
   context 'unit tests' do
     let(:fake_environment_binding) { binding }
 
+    describe '#get_binding' do
+      subject { environment_config.get_binding }
+
+      it 'returns a binding' do
+        expect(subject).to be_a(Binding)
+      end
+    end
+
     describe '#cf_params' do
       subject { environment_config.cf_params }
 
@@ -201,7 +209,6 @@ describe KumoKeisei::EnvironmentConfig do
     end
 
     context 'integration tests' do
-
       describe '#cf_params' do
         subject { environment_config.cf_params }
 
