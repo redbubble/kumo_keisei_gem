@@ -6,7 +6,7 @@ describe KumoKeisei::EnvironmentConfig do
   let(:options) do
     {
       env_name: env_name,
-      config_dir_path: config_dir_path,
+      config_path: config_dir_path,
       params_template_file_path: params_template_file_path
     }
   end
@@ -24,6 +24,51 @@ describe KumoKeisei::EnvironmentConfig do
     allow(KumoKi::KMS).to receive(:new).and_return(kms)
     allow(file_loader).to receive(:load_erb).with(params_template_file_path).and_return(parameters)
     allow(File).to receive(:dirname).and_return('/tmp')
+  end
+
+  context 'backward compatibility' do
+      context 'config_path' do
+        let(:options) do
+          {
+            env_name: env_name,
+            config_path: config_dir_path
+          }
+        end
+        it 'will be used without complaint' do
+            expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
+            expect(logger).to receive(:warn).at_most(0).times
+            expect(logger).to receive(:fatal).at_most(0).times
+            described_class.new(options, logger)
+        end
+      end
+
+      context 'config_dir_path' do
+        let(:options) do
+          {
+            env_name: env_name,
+            config_dir_path: config_dir_path
+          }
+        end
+
+        it 'will be used if given and raise a deprecation warning' do
+            expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
+            expect(logger).to receive(:warn).with("[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead")
+            described_class.new(options, logger)
+        end
+      end
+
+      context 'neither config_path nor config_dir_path' do
+        let(:options) do
+          {
+            env_name: env_name
+          }
+        end
+
+        it 'will raise an error' do
+          expect(logger).to receive(:fatal).with("Please provide a :config_path")
+          expect { described_class.new(options, logger)}.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
+        end
+      end
   end
 
   context 'unit tests' do
@@ -44,7 +89,7 @@ describe KumoKeisei::EnvironmentConfig do
         let(:options) do
           {
             env_name: env_name,
-            config_dir_path: config_dir_path
+            config_path: config_dir_path
           }
         end
 
@@ -84,7 +129,7 @@ describe KumoKeisei::EnvironmentConfig do
           let(:options) do
             {
               env_name: env_name,
-              config_dir_path: config_dir_path,
+              config_path: config_dir_path,
               params_template_file_path: params_template_file_path,
               injected_config: { "injected" => "yes" }
             }
@@ -191,7 +236,7 @@ describe KumoKeisei::EnvironmentConfig do
             expect(
               described_class.new({
                 env_name: environment,
-                config_dir_path: '',
+                config_path: '',
                 params_template_file_path: ''}
               ).development?).to eq false
           end
@@ -201,7 +246,7 @@ describe KumoKeisei::EnvironmentConfig do
           expect(
             described_class.new({
               env_name: 'fred',
-              config_dir_path: '',
+              config_path: '',
               params_template_file_path: ''}
             ).development?).to eq true
         end
