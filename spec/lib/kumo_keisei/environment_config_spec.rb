@@ -36,7 +36,9 @@ describe KumoKeisei::EnvironmentConfig do
         end
         it 'will be used without complaint' do
             expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
-            described_class.new(options)
+            expect(logger).to receive(:warn).at_most(0).times
+            expect(logger).to receive(:fatal).at_most(0).times
+            described_class.new(options, logger)
         end
       end
 
@@ -48,20 +50,10 @@ describe KumoKeisei::EnvironmentConfig do
           }
         end
 
-        before do
-          @orig_stderr = $stderr
-          $stderr = StringIO.new
-        end
-
-        after do
-          $stderr = @orig_stderr
-        end
-
         it 'will be used if given and raise a deprecation warning' do
             expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
-            described_class.new(options)
-            $stderr.rewind
-            expect($stderr.string.chomp).to eq("[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead")
+            expect(logger).to receive(:warn).with("[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead")
+            described_class.new(options, logger)
         end
       end
 
@@ -73,7 +65,8 @@ describe KumoKeisei::EnvironmentConfig do
         end
 
         it 'will raise an error' do
-          expect { described_class.new(options)}.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
+          expect(logger).to receive(:fatal).with("Please provide a :config_path")
+          expect { described_class.new(options, logger)}.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
         end
       end
   end

@@ -23,10 +23,10 @@ module KumoKeisei
       if options[:config_path]
           @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_path])
       elsif options[:config_dir_path]
-          warn "[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead"
+          @log.warn "[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead"
           @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_dir_path])
       else
-          @log.error "Please provide a :config_path"
+          @log.fatal "Please provide a :config_path"
           raise ConfigurationError.new("Please provide a :config_path")
       end
 
