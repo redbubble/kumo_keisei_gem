@@ -6,7 +6,7 @@ describe KumoKeisei::EnvironmentConfig do
   let(:options) do
     {
       env_name: env_name,
-      config_dir_path: config_dir_path,
+      config_path: config_dir_path,
       params_template_file_path: params_template_file_path
     }
   end
@@ -89,7 +89,7 @@ describe KumoKeisei::EnvironmentConfig do
         let(:options) do
           {
             env_name: env_name,
-            config_dir_path: config_dir_path
+            config_path: config_dir_path
           }
         end
 
@@ -129,7 +129,7 @@ describe KumoKeisei::EnvironmentConfig do
           let(:options) do
             {
               env_name: env_name,
-              config_dir_path: config_dir_path,
+              config_path: config_dir_path,
               params_template_file_path: params_template_file_path,
               injected_config: { "injected" => "yes" }
             }
@@ -236,7 +236,7 @@ describe KumoKeisei::EnvironmentConfig do
             expect(
               described_class.new({
                 env_name: environment,
-                config_dir_path: '',
+                config_path: '',
                 params_template_file_path: ''}
               ).development?).to eq false
           end
@@ -246,7 +246,7 @@ describe KumoKeisei::EnvironmentConfig do
           expect(
             described_class.new({
               env_name: 'fred',
-              config_dir_path: '',
+              config_path: '',
               params_template_file_path: ''}
             ).development?).to eq true
         end
