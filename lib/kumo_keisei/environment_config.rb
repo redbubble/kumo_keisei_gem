@@ -17,7 +17,6 @@ module KumoKeisei
       @params_template_file_path = options[:params_template_file_path]
       @injected_config = options[:injected_config] || {}
       @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_path])
-      @template_file_loader = KumoKeisei::FileLoader.new(config_dir_path: File.dirname(options[:params_template_file_path]))
 
       @log = logger
     end
@@ -61,7 +60,8 @@ module KumoKeisei
 
     def params
       return nil unless @params_template_file_path
-      @template_file_loader.load_erb(File.basename(@params_template_file_path))
+      template_file_loader = KumoKeisei::FileLoader.new(config_dir_path: File.dirname(@params_template_file_path))
+      template_file_loader.load_erb(File.basename(@params_template_file_path))
     end
 
     def decrypt_secrets(secrets)
