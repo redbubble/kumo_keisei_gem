@@ -8,6 +8,8 @@ require_relative 'parameter_builder'
 module KumoKeisei
   # Environment Configuration for a cloud formation stack
   class EnvironmentConfig
+    class ConfigurationError < StandardError; end
+
     LOGGER = Logger.new(STDOUT)
 
     attr_reader :app_name, :env_name
@@ -16,9 +18,18 @@ module KumoKeisei
       @env_name = options[:env_name]
       @params_template_file_path = options[:params_template_file_path]
       @injected_config = options[:injected_config] || {}
-      @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_path])
-
       @log = logger
+
+      if options[:config_path]
+          @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_path])
+      elsif options[:config_dir_path]
+          warn "[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead"
+          @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_dir_path])
+      else
+          @log.error "Please provide a :config_path"
+          raise ConfigurationError.new("Please provide a :config_path")
+      end
+
     end
 
     def production?
