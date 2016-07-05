@@ -97,6 +97,77 @@ stack_config = {
 }
 stack.apply!(stack_config)
 ```
+## Upgrading from `KumoKeisei::CloudFormationStack` to `KumoKeisei::Stack`
+
+`KumoKeisei::CloudFormationStack` is deprecated and should be replaced with a `KumoKeisei::Stack` which encompasses an environment object (`KumoKeisei::EnvironmentConfig`).
+
+Previously you would have to construct your own `EnvironmentConfig` which would marshal it's configuration, then instantiate a `CloudFormationStack` and conduct operations on it.
+
+E.g. `apply-env`:
+```ruby
+require_relative '../env/cloudformation_stack'
+
+environment_name = ARGV.fetch(0) rescue raise("Error! No environment name given!")
+
+stack = CloudFormationStack.new(environment_name)
+stack.apply
+```
+and `environment_config.rb`:
+```ruby
+require 'kumo_keisei'
+
+class CloudFormationStack
+
+  APP_NAME = "fooapp"
+
+  attr_reader :env_name
+
+  def initialize(env_name)
+    @stacks = {}
+    @env_name = env_name
+  end
+
+  def env_vars
+    {}
+  end
+
+  def apply
+    # Inject the VPC and Subnets into the application's environment config
+    foo_config = KumoKeisei::EnvironmentConfig.new(
+      env_name: env_name,
+      config_dir_path: File.expand_path(File.join("..", "..", "env", "config"), __FILE__)
+    )
+
+    foo_stack = create_stack(:foo, foo_config)
+    foo_stack.apply!
+  end
+  ...
+  def create_stack(stack_name, environment_config)
+    raise "Stack '#{ stack_name }' already exists!" if @stacks[stack_name]
+    params_template_erb = params_template(stack_name)
+    stack_values = cf_params_json(get_stack_params(params_template_erb, environment_config))
+    write_stack_params_file(stack_values, stack_name)
+    @stacks[stack_name] = KumoKeisei::CloudFormationStack.new(stack_names[stack_name], "./env/cloudformation/#{stack_name}.json", stack_file_params_file_path(stack_name))
+  end
+  ...
+```
+
+With the new `Stack` object, all you need to do is pass in the location of the template and config as in the above section. New `apply-env`:
+```ruby
+require 'kumo_keisei'
+
+environment_name = ARGV.fetch(0) rescue raise("Error! No environment name given!")
+
+stack_config = {
+  config_path: File.join('/app', 'env', 'config'),
+  template_path: File.join('/app', 'env', 'cloudformation', 'fooapp.json'),
+}
+
+stack = KumoKeisei::Stack.new('fooapp', environment_name)
+stack.apply!(stack_config)
+```
+
+
 
 ## Dependencies
 
