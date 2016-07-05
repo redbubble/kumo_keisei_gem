@@ -68,7 +68,7 @@ KumoKeisei::Stack.new(stack_name, environment_name, stack_options)
 
 ### CloudFormation Templates, Parameter Templates and Configuration Files
 
-The **CloudFormation Template** is a json file (e.g. app.json) describing a related set of Amazon resources using the [CloudFormation DSL](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/gettingstarted.templatebasics.html). You pass it it's location by specifying the `template_path` in the object passed to `apply!`,
+The **CloudFormation Template** is a json file (e.g. app.json) describing a related set of Amazon resources using the [CloudFormation DSL](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/gettingstarted.templatebasics.html). You pass the location by specifying the `template_path` in the object passed to `apply!`,
 
 The **Parameter Template** is a file prescribing the Cfn parameters [Embedded Ruby](http://www.stuartellis.eu/articles/erb/) form. It must be in the same folder holding the CloudFormation Template, named `{app_name}.yml.erb`.
 
