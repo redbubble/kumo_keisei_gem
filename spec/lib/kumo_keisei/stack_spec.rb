@@ -51,7 +51,7 @@ describe KumoKeisei::Stack do
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
     allow(File).to receive(:read).with(stack_template_path).and_return(stack_template_body)
     allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "#{app_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}))
-    allow(File).to receive(:absolute_path).and_return("#{app_name}.yml.erb")
+    # allow(File).to receive(:absolute_path).and_return("#{app_name}.yml.erb")
   end
 
   describe "#destroy!" do
@@ -86,27 +86,6 @@ describe KumoKeisei::Stack do
 
       it "complains" do
         expect { subject.apply!(stack_config) }.to raise_error(KumoKeisei::Stack::UsageError)
-      end
-    end
-
-    context "when looking for the parameter template file" do
-      before do
-        allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name).and_return(nil)
-        allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(
-                                   stack_result_list_with_status('CREATE_COMPLETE', stack_name),
-                                   stack_result_list_with_status('UPDATE_COMPLETE', stack_name)
-                                 )
-        allow(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_return("stack_id")
-      end
-
-      EXAMPLE_CFN_STACK_FILENAMES = ['app.json', 'rds.json']
-
-      EXAMPLE_CFN_STACK_FILENAMES.each do |stack_filename|
-        it "uses a file in the form of #{stack_filename}.erb" do
-          expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "#{stack_filename}.erb")).and_return(double(:environment_config, cf_params: {}))
-          expect(File).to receive(:absolute_path).and_return("#{stack_filename}.erb")
-          subject.apply!(stack_config)
-        end
       end
     end
 
@@ -342,5 +321,24 @@ describe KumoKeisei::Stack do
 
   end
 end
+
+  describe "#params_template_path" do
+    context "when looking for the parameter template file" do
+      CFN_STACK_TEMPLATE_TO_PARAMATER_TEMPLATE = {
+        'app.json' => 'app.yml.erb',
+        'rds.json' => 'rds.yml.erb'
+      }
+
+      CFN_STACK_TEMPLATE_TO_PARAMATER_TEMPLATE.each_pair do |cfn_template, parameter_template|
+        context "given #{cfn_template}" do
+        let(:stack_template_path) { "#{cfn_template}" }
+
+        it "uses a matching file in the form of #{parameter_template}" do
+          expect(subject.params_template_path(stack_config)).to eq(File.join(Dir.pwd, parameter_template))
+        end
+      end
+      end
+    end
+  end
 
 end
