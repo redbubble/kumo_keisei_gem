@@ -282,7 +282,14 @@ describe KumoKeisei::Stack do
   end
 
   describe "#config" do
-    context "when passed a config_path will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
+    context "when passed a config_path" do
+      before do
+        allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "#{app_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
+      end
+
+      it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
+        expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
+      end
 
     end
 
