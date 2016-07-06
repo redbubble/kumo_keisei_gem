@@ -41,9 +41,7 @@ module KumoKeisei
     def apply!(stack_config)
       stack_config.merge!(env_name: @env_name)
 
-      unless stack_config.include? :template_path
-        raise UsageError.new('You must provide a :template_path in the stack config hash for an apply operation')
-      end
+      raise UsageError.new('You must provide a :template_path in the stack config hash for an apply! operation') unless stack_config.has_key?(:template_path)
 
       if updatable?
         update!(stack_config)
@@ -83,7 +81,7 @@ module KumoKeisei
     end
 
     def config(stack_config)
-      raise UsageError.new('You must provide a :template_path in the stack config hash for an apply operation') unless stack_config.has_key?(:config_path)
+      raise UsageError.new('You must provide a :config_path in the stack config hash to retrieve the stack\'s config') unless stack_config.has_key?(:config_path)
       environment_config(stack_config).config
     end
 
