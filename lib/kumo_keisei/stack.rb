@@ -83,6 +83,7 @@ module KumoKeisei
     end
 
     def config(stack_config)
+      raise UsageError.new('You must provide a :template_path in the stack config hash for an apply operation') unless stack_config.has_key?(:config_path)
       environment_config(stack_config).config
     end
 

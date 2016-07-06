@@ -280,20 +280,23 @@ describe KumoKeisei::Stack do
       expect(subject.stack_name).to eq("#{app_name}-vpc-#{environment_name}")
     end
   end
-end
 
-context "integration tests" do
   describe "#config" do
-    context "if not given a stack_config containing either `config_path` or `config_dir_path`" do
-    let(:stack_config) {
-      {
+    context "when passed a config_path will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
+
+    end
+
+    context "if not given a stack_config containing a `config_path`" do
+      let(:stack_config) {
+        {
+        }
       }
-    }
       it "will raise an error" do
-        expect { described_class.new(app_name, environment_name).config(stack_config)}.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
-        # expect { subject.config(stack_config) }.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
+        expect { described_class.new(app_name, environment_name).config(stack_config)}.to raise_error(KumoKeisei::Stack::UsageError)
       end
     end
+
   end
 end
+
 end
