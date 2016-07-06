@@ -282,7 +282,7 @@ describe KumoKeisei::Stack do
   end
 
   describe "#config" do
-    context "when passed a config_path" do
+    context "when passed a config_path and params_template_file_path" do
       before do
         allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "#{app_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
       end
@@ -290,7 +290,23 @@ describe KumoKeisei::Stack do
       it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
         expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
+    end
 
+    context "when a config_path and nil for params_template_file_path" do
+      let(:stack_config) {
+        {
+          config_path: 'config-path',
+          env_name: 'non-production'
+        }
+      }
+
+      before do
+        allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: nil)).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
+      end
+
+      it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
+        expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
+      end
     end
 
     context "if not given a stack_config containing a `config_path`" do
