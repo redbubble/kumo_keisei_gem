@@ -40,6 +40,8 @@ describe KumoKeisei::Stack do
     }
   }
 
+  context "unit tests" do
+
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
     allow(KumoKeisei::ConsoleJockey).to receive(:write_line).and_return(nil)
@@ -73,6 +75,20 @@ describe KumoKeisei::Stack do
   end
 
   describe "#apply!" do
+    context "when you don't specify the location of the Cfn template" do
+      let(:stack_config) {
+        {
+          config_path: 'config-path',
+          injected_config: { 'VpcId' => 'vpc-id' },
+          env_name: 'non-production'
+        }
+      }
+
+      it "complains" do
+        expect { subject.apply!(stack_config) }.to raise_error(KumoKeisei::Stack::UsageError)
+      end
+    end
+
     context "when the stack is updatable" do
       UPDATEABLE_STATUSES = ['UPDATE_ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE']
 
@@ -264,4 +280,20 @@ describe KumoKeisei::Stack do
       expect(subject.stack_name).to eq("#{app_name}-vpc-#{environment_name}")
     end
   end
+end
+
+context "integration tests" do
+  describe "#config" do
+    context "if not given a stack_config containing either `config_path` or `config_dir_path`" do
+    let(:stack_config) {
+      {
+      }
+    }
+      it "will raise an error" do
+        expect { described_class.new(app_name, environment_name).config(stack_config)}.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
+        # expect { subject.config(stack_config) }.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
+      end
+    end
+  end
+end
 end
