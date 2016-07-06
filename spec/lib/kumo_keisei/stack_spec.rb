@@ -254,15 +254,14 @@ describe KumoKeisei::Stack do
     end
   end
 
-    describe "#type" do
-      it "presumes stacks are of type node if the type is not set" do
-        expect(subject.stack_name).to eq("#{app_name}-nodes-#{environment_name}")
-      end
-
-      it "embeds the type into the name of the stack if set" do
-        subject = KumoKeisei::Stack.new(app_name, environment_name, { type: "vpc" } )
-        expect(subject.stack_name).to eq("#{app_name}-vpc-#{environment_name}")
-      end
+  describe "#type" do
+    it "presumes stacks are of type node if the type is not set" do
+      expect(subject.stack_name).to eq("#{app_name}-nodes-#{environment_name}")
     end
 
+    it "embeds the type into the name of the stack if set" do
+      subject = KumoKeisei::Stack.new(app_name, environment_name, { type: "vpc" } )
+      expect(subject.stack_name).to eq("#{app_name}-vpc-#{environment_name}")
+    end
+  end
 end
