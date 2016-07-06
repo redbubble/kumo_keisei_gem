@@ -97,6 +97,23 @@ stack_config = {
 }
 stack.apply!(stack_config)
 ```
+
+### Getting the configuration without an `apply!`
+
+If you need to inspect the configuration without applying a stack, call `config`:
+```ruby
+stack_config = {
+  config_path: File.join('/app', 'env', 'config'),
+  template_path: File.join('/app', 'env', 'cloudformation', 'myapp.json'),
+  injected_config: {
+    'Seed' => random_seed,
+  }
+}
+marshalled_config = stack.config(stack_config)
+if marshalled_config('DB_HOST').start_with? '192.' then
+  ...
+```
+
 ## Upgrading from `KumoKeisei::CloudFormationStack` to `KumoKeisei::Stack`
 
 `KumoKeisei::CloudFormationStack` is deprecated and should be replaced with a `KumoKeisei::Stack` which encompasses an environment object (`KumoKeisei::EnvironmentConfig`).

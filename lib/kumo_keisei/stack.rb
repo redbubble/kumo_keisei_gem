@@ -4,6 +4,7 @@ module KumoKeisei
   class Stack
     class CreateError < StandardError; end
     class UpdateError < StandardError; end
+    class UsageError < StandardError; end
 
     UPDATEABLE_STATUSES = [
       'UPDATE_ROLLBACK_COMPLETE',
@@ -39,6 +40,9 @@ module KumoKeisei
 
     def apply!(stack_config)
       stack_config.merge!(env_name: @env_name)
+
+      raise UsageError.new('You must provide a :template_path in the stack config hash for an apply! operation') unless stack_config.has_key?(:template_path)
+
       if updatable?
         update!(stack_config)
       else
@@ -74,6 +78,11 @@ module KumoKeisei
 
     def exists?
       !get_stack.nil?
+    end
+
+    def config(stack_config)
+      raise UsageError.new('You must provide a :config_path in the stack config hash to retrieve the stack\'s config') unless stack_config.has_key?(:config_path)
+      environment_config(stack_config).config
     end
 
     private
@@ -153,7 +162,7 @@ module KumoKeisei
     end
 
     def environment_config(stack_config)
-      params_template_path = File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb"))
+      params_template_path = stack_config.has_key?(:template_path) ? File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb")) : nil
       EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path))
     end
 
