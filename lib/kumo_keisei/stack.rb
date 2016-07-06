@@ -162,7 +162,7 @@ module KumoKeisei
     end
 
     def environment_config(stack_config)
-      params_template_path = stack_config.has_key?(:template_path) ? File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{@app_name}.yml.erb")) : nil
+      params_template_path = stack_config.has_key?(:template_path) ? File.absolute_path("#{stack_config[:template_path]}.erb") : nil
       EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path))
     end
 

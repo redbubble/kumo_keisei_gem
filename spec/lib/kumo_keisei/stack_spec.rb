@@ -89,6 +89,27 @@ describe KumoKeisei::Stack do
       end
     end
 
+    context "when looking for the parameter template file" do
+      before do
+        allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name).and_return(nil)
+        allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(
+                                   stack_result_list_with_status('CREATE_COMPLETE', stack_name),
+                                   stack_result_list_with_status('UPDATE_COMPLETE', stack_name)
+                                 )
+        allow(cloudformation).to receive(:update_stack).with(cf_stack_update_params).and_return("stack_id")
+      end
+
+      EXAMPLE_CFN_STACK_FILENAMES = ['app.json', 'rds.json']
+
+      EXAMPLE_CFN_STACK_FILENAMES.each do |stack_filename|
+        it "uses a file in the form of #{stack_filename}.erb" do
+          expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "#{stack_filename}.erb")).and_return(double(:environment_config, cf_params: {}))
+          expect(File).to receive(:absolute_path).and_return("#{stack_filename}.erb")
+          subject.apply!(stack_config)
+        end
+      end
+    end
+
     context "when the stack is updatable" do
       UPDATEABLE_STATUSES = ['UPDATE_ROLLBACK_COMPLETE', 'CREATE_COMPLETE', 'UPDATE_COMPLETE']
 
