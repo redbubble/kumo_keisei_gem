@@ -271,7 +271,7 @@ describe KumoKeisei::Stack do
   end
 
   describe "#type" do
-    it "presumes stacks are of type node if the type is not set" do
+    it "uses appname-environment name as stack name if the type is not set" do
       expect(subject.stack_name).to eq("#{app_name}-#{environment_name}")
     end
 
