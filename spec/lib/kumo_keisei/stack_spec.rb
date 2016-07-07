@@ -14,7 +14,6 @@ describe KumoKeisei::Stack do
   let(:stack_template_name) { "#{app_name}-#{environment_name}" }
   let(:stack_cfntemplate_filename) { "#{stack_template_name}.json" }
   let(:stack_cfnparams_filename) { "#{stack_template_name}.yml.erb" }
-  let(:file_params_path) { nil }
   let(:cloudformation) { instance_double(Aws::CloudFormation::Client) }
   let(:happy_stack_status) { "CREATE_COMPLETE" }
   let(:cf_stack) { stack_result_list_with_status(happy_stack_status, stack_name) }
