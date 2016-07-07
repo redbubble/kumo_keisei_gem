@@ -321,8 +321,8 @@ end
   describe "#params_template_path" do
     context "when looking for the parameter template file" do
       CFN_STACK_TEMPLATE_TO_PARAMATER_TEMPLATE = {
-        'app.json' => 'app.yml.erb',
-        'rds.json' => 'rds.yml.erb'
+        '/foo/app.json' => '/foo/app.yml.erb',
+        '/foo/rds.json' => '/foo/rds.yml.erb'
       }
 
       CFN_STACK_TEMPLATE_TO_PARAMATER_TEMPLATE.each_pair do |cfn_template, parameter_template|

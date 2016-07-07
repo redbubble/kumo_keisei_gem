@@ -86,7 +86,7 @@ module KumoKeisei
     end
 
     def params_template_path(stack_config)
-      stack_config.has_key?(:template_path) ? File.absolute_path("#{File.basename(stack_config[:template_path], '.*')}.yml.erb") : nil
+      stack_config.has_key?(:template_path) ? File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{File.basename(stack_config[:template_path], '.*')}.yml.erb")) : nil
     end
 
     private
