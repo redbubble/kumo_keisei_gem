@@ -11,8 +11,9 @@ describe KumoKeisei::Stack do
   let(:app_name) { "my-stack" }
   let(:environment_name) { 'non-production' }
   let(:stack_name) { "#{app_name}-nodes-#{environment_name}" }
-  let(:stack_template_path) { "#{app_name}-#{environment_name}.json" }
-  let(:file_params_path) { nil }
+  let(:stack_template_name) { "#{app_name}-#{environment_name}" }
+  let(:stack_cfntemplate_filename) { "#{stack_template_name}.json" }
+  let(:stack_cfnparams_filename) { "#{stack_template_name}.yml.erb" }
   let(:cloudformation) { instance_double(Aws::CloudFormation::Client) }
   let(:happy_stack_status) { "CREATE_COMPLETE" }
   let(:cf_stack) { stack_result_list_with_status(happy_stack_status, stack_name) }
@@ -34,7 +35,7 @@ describe KumoKeisei::Stack do
   let(:stack_config) {
     {
       config_path: 'config-path',
-      template_path: stack_template_path,
+      template_path: stack_cfntemplate_filename,
       injected_config: { 'VpcId' => 'vpc-id' },
       env_name: 'non-production'
     }
@@ -49,9 +50,10 @@ describe KumoKeisei::Stack do
     allow(Aws::CloudFormation::Client).to receive(:new).and_return(cloudformation)
     allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(cf_stack)
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
-    allow(File).to receive(:read).with(stack_template_path).and_return(stack_template_body)
-    allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "#{app_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}))
-    allow(File).to receive(:absolute_path).and_return("#{app_name}.yml.erb")
+    allow(File).to receive(:read).with(stack_cfntemplate_filename).and_return(stack_template_body)
+    allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_cfnparams_filename}")).and_return(double(:environment_config, cf_params: {}))
+    # allow(File).to receive(:absolute_path).and_return("#{app_name}.yml.erb")
+    Dir.chdir('/')
   end
 
   describe "#destroy!" do
@@ -283,11 +285,8 @@ describe KumoKeisei::Stack do
 
   describe "#config" do
     context "when passed a config_path and params_template_file_path" do
-      before do
-        allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "#{app_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
-      end
-
       it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
+        expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
@@ -300,11 +299,8 @@ describe KumoKeisei::Stack do
         }
       }
 
-      before do
-        allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: nil)).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
-      end
-
       it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
+        expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: nil)).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
@@ -321,5 +317,38 @@ describe KumoKeisei::Stack do
 
   end
 end
+
+  describe "#params_template_path" do
+    context "when looking for the parameter template file" do
+      CFN_STACK_TEMPLATE_TO_PARAMATER_TEMPLATE = {
+        '/foo/app.json' => '/foo/app.yml.erb',
+        '/foo/rds.json' => '/foo/rds.yml.erb'
+      }
+
+      CFN_STACK_TEMPLATE_TO_PARAMATER_TEMPLATE.each_pair do |cfn_template, parameter_template|
+        context "given #{cfn_template}" do
+          let(:stack_cfntemplate_filename) { "#{cfn_template}" }
+          it "uses a matching file in the form of #{parameter_template}" do
+            expect(subject.params_template_path(stack_config)).to eq(File.join(Dir.pwd, parameter_template))
+          end
+        end
+      end
+    end
+
+    context "when the parameter template file has not been passed in" do
+      let(:stack_config) {
+        {
+          config_path: 'config-path',
+          injected_config: { 'VpcId' => 'vpc-id' },
+          env_name: 'non-production'
+        }
+      }
+
+      it "will return nil" do
+        expect(subject.params_template_path(stack_config)).to be_nil
+      end
+    end
+
+  end
 
 end
