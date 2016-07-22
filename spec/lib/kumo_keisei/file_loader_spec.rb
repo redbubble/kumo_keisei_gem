@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe KumoKeisei::FileLoader do
   let(:config_dir_path) { '/the/garden/path' }
   let(:options) { { config_dir_path: config_dir_path } }

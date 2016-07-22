@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe KumoKeisei::ParameterBuilder do
   subject  {described_class.new(dynamic_params, file_path) }
   let(:dynamic_params) { {} }
