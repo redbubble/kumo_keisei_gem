@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe KumoKeisei::EnvironmentConfig do
   let(:env_name) { 'the_jungle' }
   let(:config_dir_path) { '/var/config' }

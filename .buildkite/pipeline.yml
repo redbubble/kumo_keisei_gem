@@ -3,7 +3,6 @@ steps:
     command: script/unit_test.sh
     agents:
       location: aws
-  - wait
   - name: ':gem: build'
     command: script/build.sh
     agents:
