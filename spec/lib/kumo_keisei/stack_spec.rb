@@ -40,8 +40,6 @@ describe KumoKeisei::Stack do
     }
   }
 
-  context "unit tests" do
-
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
     allow(KumoKeisei::ConsoleJockey).to receive(:write_line).and_return(nil)
@@ -234,22 +232,19 @@ describe KumoKeisei::Stack do
     end
 
     describe "#outputs" do
-      context 'when the stack exists' do
-        let(:output) { double(:output, output_key: "Key", output_value: "Value") }
-        let(:stack) { double(:stack, stack_name: stack_name, outputs: [output])}
-        let(:stack_result) { double(:stack_result, stacks: [stack]) }
+      let(:name) { "Key" }
+      subject { instance.outputs(name) }
 
-        it "returns the outputs given by CloudFormation" do
-          allow(cloudformation).to receive(:describe_stacks).and_return(stack_result)
-          expect(subject.outputs("Key")).to eq("Value")
-        end
-      end
+      let(:get_stack_output) { double(:get_stack_output) }
 
-      context 'when the stack does not exist' do
-        it 'returns nil' do
-          allow(subject).to receive(:get_stack).and_return(nil)
-          expect(subject.outputs('Key')).to be_nil
-        end
+      let(:stack) { double(:stack, stack_name: stack_name)}
+      let(:stack_result) { double(:stack_result, stacks: [stack]) }
+      before { allow(cloudformation).to receive(:describe_stacks).and_return(stack_result) }
+
+      it "delegates output retrieval to GetStackOutput" do
+        expect(KumoKeisei::GetStackOutput).to receive(:new).and_return(get_stack_output)
+        expect(get_stack_output).to receive(:output).with(name).and_return('Value')
+        expect(subject).to eq("Value")
       end
     end
 
@@ -315,7 +310,6 @@ describe KumoKeisei::Stack do
     end
 
   end
-end
 
   describe "#params_template_path" do
     context "when looking for the parameter template file" do
