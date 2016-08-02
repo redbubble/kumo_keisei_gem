@@ -1,3 +1,5 @@
+require 'erb'
+
 module KumoKeisei
   class FileLoader
     def initialize(options)
