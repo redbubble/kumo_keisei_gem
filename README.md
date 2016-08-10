@@ -24,12 +24,12 @@ Or install it yourself as:
 
 ### Basic Usage
 
-The basic usage will give you a CloudFormation stack named `{application}-{type}-{environment}`. The default type is `nodes`
+The basic usage will give you a CloudFormation stack named `{application}-{environment}`. The default type is `nodes`
 
 ```ruby
 application_name = "myapp"
 environment_name = "production"
-my_stack = KumoKeisei::Stack.new(stack_name, environment_name)
+my_stack = KumoKeisei::Stack.new(application_name, environment_name)
 
 stack_config = {
   config_path: File.join('/app', 'env', 'config'),
@@ -39,15 +39,13 @@ stack_config = {
 my_stack.apply! stack_config
 ```
 
-### Changing the stack type
+### Stack Naming
 
-Specify the `type` in an options object passed to the `KumoKeisei::Stack` constructor. For example the following will give you a `myapp-vpc-production` stack e.g:
-```ruby
-vpc_stack_options = {
-  type: 'vpc'
-}
-vpc_stack = KumoKeisei::Stack.new('myapp', 'production', vpc_stack_options)
-```
+We are using APPNAME-ENVNAME (e.g `redbubble-staging`) as our naming convention. There are some legacy stacks in AWS which have the old naming convention which is APPNAME-TYPE-ENVNAME (e.g `redbubble-nodes-staging`). If you want to ensure that you keep your existing stack (so you don't accidently build an extra stack):
+
+0. Login into the AWS console and find out what your stack is named.
+0. Update your app name (see Basic Usage above) in the apply-env script to match your existing stack name's app name part (which is everything before the environment name, e.g `redbubble-nodes` in `redbubble-nodes-staging`)
+
 
 ### Timeouts
 
