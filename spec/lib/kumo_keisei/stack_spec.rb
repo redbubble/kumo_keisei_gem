@@ -9,7 +9,7 @@ describe KumoKeisei::Stack do
 
   let(:app_name) { "my-stack" }
   let(:environment_name) { 'non-production' }
-  let(:stack_name) { "#{app_name}-nodes-#{environment_name}" }
+  let(:stack_name) { "#{app_name}-#{environment_name}" }
   let(:stack_template_name) { "#{app_name}-#{environment_name}" }
   let(:stack_cfntemplate_filename) { "#{stack_template_name}.json" }
   let(:stack_cfnparams_filename) { "#{stack_template_name}.yml.erb" }
@@ -50,7 +50,6 @@ describe KumoKeisei::Stack do
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
     allow(File).to receive(:read).with(stack_cfntemplate_filename).and_return(stack_template_body)
     allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_cfnparams_filename}")).and_return(double(:environment_config, cf_params: {}))
-    # allow(File).to receive(:absolute_path).and_return("#{app_name}.yml.erb")
     Dir.chdir('/')
   end
 
@@ -260,17 +259,6 @@ describe KumoKeisei::Stack do
                                                                    "ResourceType" => "green-eggs-and-ham"
                                                                  )
       end
-    end
-  end
-
-  describe "#type" do
-    it "presumes stacks are of type node if the type is not set" do
-      expect(subject.stack_name).to eq("#{app_name}-nodes-#{environment_name}")
-    end
-
-    it "embeds the type into the name of the stack if set" do
-      subject = KumoKeisei::Stack.new(app_name, environment_name, { type: "vpc" } )
-      expect(subject.stack_name).to eq("#{app_name}-vpc-#{environment_name}")
     end
   end
 
