@@ -15,7 +15,8 @@ describe KumoKeisei::Stack do
   let(:stack_cfnparams_filename) { "#{stack_template_name}.yml.erb" }
   let(:cloudformation) { instance_double(Aws::CloudFormation::Client) }
   let(:happy_stack_status) { "CREATE_COMPLETE" }
-  let(:cf_stack) { stack_result_list_with_status(happy_stack_status, stack_name) }
+  let(:named_cf_stack) { double(stack_status: happy_stack_status, stack_name: stack_name, stack_id: nil) }
+  let(:cf_stack) { double(stacks: [named_cf_stack]) }
   let(:parameter_builder) { instance_double(KumoKeisei::ParameterBuilder, params: {}) }
   let(:stack_template_body) { double(:stack_template_body) }
   let(:cf_stack_update_params) do
@@ -39,8 +40,6 @@ describe KumoKeisei::Stack do
       env_name: 'non-production'
     }
   }
-
-  context "unit tests" do
 
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
@@ -234,22 +233,15 @@ describe KumoKeisei::Stack do
     end
 
     describe "#outputs" do
-      context 'when the stack exists' do
-        let(:output) { double(:output, output_key: "Key", output_value: "Value") }
-        let(:stack) { double(:stack, stack_name: stack_name, outputs: [output])}
-        let(:stack_result) { double(:stack_result, stacks: [stack]) }
+      let(:name) { "Key" }
+      subject { instance.outputs(name) }
 
-        it "returns the outputs given by CloudFormation" do
-          allow(cloudformation).to receive(:describe_stacks).and_return(stack_result)
-          expect(subject.outputs("Key")).to eq("Value")
-        end
-      end
+      let(:get_stack_output) { double(:get_stack_output) }
 
-      context 'when the stack does not exist' do
-        it 'returns nil' do
-          allow(subject).to receive(:get_stack).and_return(nil)
-          expect(subject.outputs('Key')).to be_nil
-        end
+      it "delegates output retrieval to GetStackOutput" do
+        expect(KumoKeisei::GetStackOutput).to receive(:new).with(named_cf_stack).and_return(get_stack_output)
+        expect(get_stack_output).to receive(:output).with(name).and_return('Value')
+        expect(subject).to eq("Value")
       end
     end
 
@@ -315,7 +307,6 @@ describe KumoKeisei::Stack do
     end
 
   end
-end
 
   describe "#params_template_path" do
     context "when looking for the parameter template file" do

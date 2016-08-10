@@ -62,12 +62,8 @@ module KumoKeisei
       ensure_deleted!
     end
 
-    def outputs(output)
-      stack = get_stack
-      return nil if stack.nil?
-      outputs_hash = stack.outputs.reduce({}) { |acc, o| acc.merge(o.output_key.to_s => o.output_value) }
-
-      outputs_hash[output]
+    def outputs(name)
+      return GetStackOutput.new(get_stack).output(name)
     end
 
     def logical_resource(resource_name)
