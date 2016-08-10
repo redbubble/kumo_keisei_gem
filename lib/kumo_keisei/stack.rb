@@ -28,14 +28,21 @@ module KumoKeisei
       self.new(app_name, environment_name).exists?
     end
 
-    def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90 })
-      type = options.fetch(:type, 'nodes')
+    def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90, prompt_user: true })
       @env_name = environment_name
       @app_name = app_name
-      @stack_name = "#{app_name}-#{type}-#{ environment_name }"
+      @stack_name = "#{app_name}-#{ environment_name }"
       @confirmation_timeout = options[:confirmation_timeout]
       @waiter_delay = options[:waiter_delay]
       @waiter_attempts = options[:waiter_attempts]
+      prompt_user if options[:prompt_user]
+    end
+
+    def prompt_user
+      puts "WARNING: You are about to lookup/create/update/delete #{@stack_name}."
+      puts "We have recently changed the way we name stacks in aws, if #{@stack_name} looks correct, hit 'Y', otherwise hit anything else and read more at 'https://github.com/redbubble/kumo_keisei_gem'"
+      continue = $stdin.gets.chomp.downcase
+      exit 1 if continue != 'y'
     end
 
     def apply!(stack_config)

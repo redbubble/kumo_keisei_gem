@@ -9,7 +9,7 @@ describe KumoKeisei::Stack do
 
   let(:app_name) { "my-stack" }
   let(:environment_name) { 'non-production' }
-  let(:stack_name) { "#{app_name}-nodes-#{environment_name}" }
+  let(:stack_name) { "#{app_name}-#{environment_name}" }
   let(:stack_template_name) { "#{app_name}-#{environment_name}" }
   let(:stack_cfntemplate_filename) { "#{stack_template_name}.json" }
   let(:stack_cfnparams_filename) { "#{stack_template_name}.yml.erb" }
@@ -31,7 +31,7 @@ describe KumoKeisei::Stack do
     cf_stack_update_params.merge(on_failure: "DELETE")
   end
   let(:confirmation_timeout) { 30 }
-  subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name) }
+  subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name, confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90, prompt_user: false ) }
   let(:stack_config) {
     {
       config_path: 'config-path',
@@ -50,7 +50,6 @@ describe KumoKeisei::Stack do
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
     allow(File).to receive(:read).with(stack_cfntemplate_filename).and_return(stack_template_body)
     allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_cfnparams_filename}")).and_return(double(:environment_config, cf_params: {}))
-    # allow(File).to receive(:absolute_path).and_return("#{app_name}.yml.erb")
     Dir.chdir('/')
   end
 
@@ -263,17 +262,6 @@ describe KumoKeisei::Stack do
     end
   end
 
-  describe "#type" do
-    it "presumes stacks are of type node if the type is not set" do
-      expect(subject.stack_name).to eq("#{app_name}-nodes-#{environment_name}")
-    end
-
-    it "embeds the type into the name of the stack if set" do
-      subject = KumoKeisei::Stack.new(app_name, environment_name, { type: "vpc" } )
-      expect(subject.stack_name).to eq("#{app_name}-vpc-#{environment_name}")
-    end
-  end
-
   describe "#config" do
     context "when passed a config_path and params_template_file_path" do
       it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
@@ -302,7 +290,7 @@ describe KumoKeisei::Stack do
         }
       }
       it "will raise an error" do
-        expect { described_class.new(app_name, environment_name).config(stack_config)}.to raise_error(KumoKeisei::Stack::UsageError)
+        expect { described_class.new(app_name, environment_name, prompt_user: false).config(stack_config)}.to raise_error(KumoKeisei::Stack::UsageError)
       end
     end
 
