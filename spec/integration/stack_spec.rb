@@ -8,7 +8,7 @@ end
 def ensure_stack_doesnt_exist(stack_name , it_was_supposed_to_exist=false)
   if cfn_stack_names.include? stack_name
     puts "Deleting #{stack_name} stack"
-    puts "...it seems to be left over from a previous test" unless it_was_supposed_to_exist
+    puts "...it wasn't supposed to exist, perhaps left over from a previous test?" unless it_was_supposed_to_exist
     cloudformation = Aws::CloudFormation::Client.new
     cloudformation.delete_stack(stack_name: stack_name)
     cloudformation.wait_until(:stack_delete_complete, stack_name: stack_name) { |waiter| waiter.delay = 1; waiter.max_attempts = 90 }
@@ -32,38 +32,6 @@ describe KumoKeisei::Stack do
     before do
       ensure_stack_doesnt_exist(stack_full_name, false)
     end
-    #
-    # [
-    #   {
-    #     :variant => 'no parameters',
-    #     :fixture => 'no-parameter-section.json'
-    #   },
-    #   {
-    #     :variant => 'an empty parameter section',
-    #     :fixture => 'empty-parameter-section.json'
-    #   },
-    #   {
-    #     :variant => 'parameters which all have defaults',
-    #     :fixture => 'all-parameters-have-defaults.json'
-    #   }
-    # ].each do |scenario|
-    #   context "when given a CloudFormation template that has #{scenario[:variant]}" do
-    #     after do
-    #       ensure_stack_doesnt_exist(stack_full_name, true)
-    #     end
-    #
-    #     it "creates a stack" do
-    #       stack_config = {
-    #         # config_path: File.join('', 'config'),
-    #         template_path: File.join(File.dirname(__FILE__), 'fixtures', "#{scenario[:fixture]}")
-    #       }
-    #
-    #       stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
-    #       stack.apply!(stack_config)
-    #       expect cfn_stack_names.to include(stack_full_name)
-    #     end
-    #   end
-    # end
 
     context "when given a CloudFormation template" do
       context "and a parameter template file exists" do
