@@ -28,14 +28,14 @@ module KumoKeisei
       self.new(app_name, environment_name).exists?
     end
 
-    def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90 }, prompt_user = true)
+    def initialize(app_name, environment_name, options = { confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90 }, prompt = true)
       @env_name = environment_name
       @app_name = app_name
       @stack_name = "#{app_name}-#{ environment_name }"
       @confirmation_timeout = options[:confirmation_timeout]
       @waiter_delay = options[:waiter_delay]
       @waiter_attempts = options[:waiter_attempts]
-      prompt_user if prompt_user
+      prompt_user if prompt
     end
 
     def prompt_user
