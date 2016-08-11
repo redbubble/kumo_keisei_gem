@@ -1,0 +1,21 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "A simple CFN stack to test KumoKeisei",
+    "Parameters": {
+        "VpcId": {
+            "Type": "String",
+            "Description": "VpcId of your existing Virtual Private Cloud (VPC)"
+        }
+    },
+    "Resources": {
+        "KumoTestSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "GroupDescription": "A security group to test KumoKeisei"
+            }
+        }
+    }
+}
