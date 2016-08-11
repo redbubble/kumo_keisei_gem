@@ -84,6 +84,11 @@ module KumoKeisei
       stack_config.has_key?(:template_path) ? File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{File.basename(stack_config[:template_path], '.*')}.yml.erb")) : nil
     end
 
+    def params_template_exist?(stack_config)
+      return File.exist? params_template_path(stack_config)
+    end
+
+
     private
 
     def transform_logical_resource_id(id)
@@ -128,7 +133,7 @@ module KumoKeisei
       cloudformation.create_stack(
         stack_name: @stack_name,
         template_body: File.read(stack_config[:template_path]),
-        parameters: environment_config(stack_config).cf_params,
+        parameters: params_template_exist?(stack_config) ? environment_config(stack_config).cf_params : {},
         capabilities: ["CAPABILITY_IAM"],
         on_failure: "DELETE"
       )
@@ -146,7 +151,7 @@ module KumoKeisei
       cloudformation.update_stack(
         stack_name: @stack_name,
         template_body: File.read(stack_config[:template_path]),
-        parameters: environment_config(stack_config).cf_params,
+        parameters:  params_template_exist?(stack_config) ? environment_config(stack_config).cf_params : {},
         capabilities: ["CAPABILITY_IAM"]
       )
 
