@@ -70,14 +70,13 @@ describe KumoKeisei::Stack do
       context "and a paramater template file exists" do
         it "creates a stack" do
           stack_config = {
-            config_path: File.join('', 'config'),
+            config_path: File.join(File.dirname(__FILE__), 'fixtures'),
             template_path: File.join(File.dirname(__FILE__), 'fixtures', 'one-parameter.json')
           }
 
           stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
           stack.apply!(stack_config)
           expect(cfn_stack_names).to include(stack_full_name)
-
         end
 
         after do
