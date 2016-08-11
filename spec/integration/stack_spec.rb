@@ -32,12 +32,11 @@ describe KumoKeisei::Stack do
     before do
       ensure_stack_doesnt_exist(stack_full_name, false)
     end
-    #
-    # [
-    #   {
-    #     :variant => 'no parameters',
-    #     :fixture => 'no-parameter-section.json'
-    #   },
+    [
+      {
+        :variant => 'no parameters',
+        :fixture => 'no-parameter-section.json'
+      },
     #   {
     #     :variant => 'an empty parameter section',
     #     :fixture => 'empty-parameter-section.json'
@@ -46,54 +45,60 @@ describe KumoKeisei::Stack do
     #     :variant => 'parameters which all have defaults',
     #     :fixture => 'all-parameters-have-defaults.json'
     #   }
-    # ].each do |scenario|
-    #   context "when given a CloudFormation template that has #{scenario[:variant]}" do
-    #     after do
-    #       ensure_stack_doesnt_exist(stack_full_name, true)
-    #     end
-    #
-    #     it "creates a stack" do
-    #       stack_config = {
-    #         # config_path: File.join('', 'config'),
-    #         template_path: File.join(File.dirname(__FILE__), 'fixtures', "#{scenario[:fixture]}")
-    #       }
-    #
-    #       stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
-    #       stack.apply!(stack_config)
-    #       expect cfn_stack_names.to include(stack_full_name)
-    #     end
-    #   end
-    # end
+    ].each do |scenario|
+      context "when given a CloudFormation template that has #{scenario[:variant]}" do
+        after do
+          ensure_stack_doesnt_exist(stack_full_name, true)
+        end
 
-    context "when given a CloudFormation template that has parameters without defaults" do
-
-      context "and a paramater template file exists" do
         it "creates a stack" do
           stack_config = {
-            config_path: File.join(File.dirname(__FILE__), 'fixtures'),
-            template_path: File.join(File.dirname(__FILE__), 'fixtures', 'one-parameter.json')
+            # config_path: File.join('', 'config'),
+            template_path: File.join(File.dirname(__FILE__), 'fixtures', "#{scenario[:fixture]}")
           }
 
           stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
           stack.apply!(stack_config)
-          expect(cfn_stack_names).to include(stack_full_name)
-        end
-
-        after do
-          ensure_stack_doesnt_exist(stack_full_name, true)
+          expect cfn_stack_names.to include(stack_full_name)
         end
       end
-
-      # context "and a paramater template file doesn't exist" do
-      #   it "does not create a stack" do
-      #     fail
-      #   end
-      #
-      #   after do
-      #     ensure_stack_doesnt_exist(stack_full_name, false)
-      #   end
-      # end
     end
+
+    # context "when given a CloudFormation template that has parameters without defaults" do
+    #
+    #   context "and a paramater template file exists" do
+    #     it "creates a stack" do
+    #       stack_config = {
+    #         config_path: File.join(File.dirname(__FILE__), 'fixtures'),
+    #         template_path: File.join(File.dirname(__FILE__), 'fixtures', 'one-parameter.json')
+    #       }
+    #
+    #       stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
+    #       stack.apply!(stack_config)
+    #       expect(cfn_stack_names).to include(stack_full_name)
+    #     end
+    #
+    #     after do
+    #       ensure_stack_doesnt_exist(stack_full_name, true)
+    #     end
+    #   end
+    #
+    #   context "and a paramater template file doesn't exist" do
+    #     it "does not create a stack" do
+    #         stack_config = {
+    #           config_path: File.join(File.dirname(__FILE__), 'fixtures'),
+    #           template_path: File.join(File.dirname(__FILE__), 'fixtures', 'one-parameter-no-matching-paramater-template.json')
+    #         }
+    #         stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
+    #         expect(stack.apply!(stack_config)).to raise_error
+    #         expect(cfn_stack_names).not_to include(stack_full_name)
+    #     end
+    #
+    #     after do
+    #       ensure_stack_doesnt_exist(stack_full_name, false)
+    #     end
+    #   end
+    # end
 
   end
 end
