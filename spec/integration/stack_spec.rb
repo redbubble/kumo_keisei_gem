@@ -66,7 +66,7 @@ describe KumoKeisei::Stack do
     # end
 
     context "when given a CloudFormation template" do
-      context "and a paramater template file exists" do
+      context "and a parameter template file exists" do
         it "creates a stack" do
           stack_config = {
             config_path: File.join(File.dirname(__FILE__), 'fixtures'),
@@ -83,7 +83,23 @@ describe KumoKeisei::Stack do
         end
       end
 
-      context "and a paramater template file is required but does not exist" do
+      context "and a parameter template file is not required and does not exist" do
+        it "creates a stack" do
+          stack_config = {
+            template_path: File.join(File.dirname(__FILE__), 'fixtures', 'no-parameter-section.json')
+          }
+
+          stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
+          stack.apply!(stack_config)
+          expect(cfn_stack_names).to include(stack_full_name)
+        end
+
+        after do
+          ensure_stack_doesnt_exist(stack_full_name, true)
+        end
+      end
+
+      context "and a parameter template file is required but does not exist" do
         it "does not create a stack" do
           stack_config = {
             template_path: File.join(File.dirname(__FILE__), 'fixtures', 'one-parameter-no-matching-parameter-template.json')
