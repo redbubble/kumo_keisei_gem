@@ -1,5 +1,4 @@
 require 'aws-sdk'
-require 'json'
 
 module KumoKeisei
   class Stack
@@ -123,24 +122,13 @@ module KumoKeisei
       raise UpdateError.new("Stack is busy, try again soon")
     end
 
-    def template_body(stack_config)
-        File.read(stack_config[:template_path])
-    end
-
     def create!(stack_config)
       raise StackValidationError.new("The stack name needs to be 32 characters or shorter") if @stack_name.length > 32
-      template_body = template_body(stack_config)
-      template_data = JSON.parse(template_body)
-      parameters = []
-
-      if template_data.fetch('Parameters', {}).values.all? { |v| v.key? 'Default' }
-        parameters = environment_config(stack_config).cf_params
-      end
 
       cloudformation.create_stack(
         stack_name: @stack_name,
-        template_body: template_body,
-        parameters: parameters,
+        template_body: File.read(stack_config[:template_path]),
+        parameters: environment_config(stack_config).cf_params,
         capabilities: ["CAPABILITY_IAM"],
         on_failure: "DELETE"
       )
@@ -154,18 +142,11 @@ module KumoKeisei
 
     def update!(stack_config)
       wait_until_ready(false)
-      template_body = template_body(stack_config)
-      template_data = JSON.parse(template_body)
-      parameters = []
-
-      if template_data.fetch('Parameters', {}).values.all? { |v| v.key? 'Default' }
-        parameters = environment_config(stack_config).cf_params
-      end
 
       cloudformation.update_stack(
         stack_name: @stack_name,
-        template_body: template_body,
-        parameters: parameters,
+        template_body: File.read(stack_config[:template_path]),
+        parameters: environment_config(stack_config).cf_params,
         capabilities: ["CAPABILITY_IAM"]
       )
 
