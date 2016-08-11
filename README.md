@@ -205,6 +205,16 @@ This gem is tested with Ruby (MRI) versions 1.9.3 and 2.2.3.
 
 ## Testing changes
 
+### Automated AWS Integration Tests
+
+You can test the Cloudformation responsibilities of this gem by extending the integration tests at `spec/integration`.
+
+To run these tests you need a properly configured AWS environment (with AWS_DEFAULT_REGION, AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY set) and then run `./script/integration_test.sh`.
+
+If you run this within a Buildkite job then you will have a stack named "kumokeisei-test-$buildnumber" created and torn down for each integration test context. If you run this outside of a Buildkite job then the stack will be named "kumokeisei-test-$username".
+
+### Manual testing with Kumo Tools container
+
 Changes to the gem can be manually tested end to end in a project that uses the gem (i.e. http-wala).
 
 1. First start the dev-tools container: `kumo tools debug non-production`
