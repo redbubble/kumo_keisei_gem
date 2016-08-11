@@ -31,7 +31,7 @@ describe KumoKeisei::Stack do
     cf_stack_update_params.merge(on_failure: "DELETE")
   end
   let(:confirmation_timeout) { 30 }
-  subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name, confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90, prompt_user: false ) }
+  subject(:instance) { KumoKeisei::Stack.new(app_name, environment_name, {confirmation_timeout: 30, waiter_delay: 20, waiter_attempts: 90}, false ) }
   let(:stack_config) {
     {
       config_path: 'config-path',
@@ -290,7 +290,7 @@ describe KumoKeisei::Stack do
         }
       }
       it "will raise an error" do
-        expect { described_class.new(app_name, environment_name, prompt_user: false).config(stack_config)}.to raise_error(KumoKeisei::Stack::UsageError)
+        expect { described_class.new(app_name, environment_name, {}, false).config(stack_config)}.to raise_error(KumoKeisei::Stack::UsageError)
       end
     end
 
