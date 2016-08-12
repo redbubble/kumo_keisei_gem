@@ -7,6 +7,8 @@ steps:
     command: script/integration_test.sh
     agents:
       location: aws
+    env:
+      AWS_REGION: us-east-1
 
   - wait
 
