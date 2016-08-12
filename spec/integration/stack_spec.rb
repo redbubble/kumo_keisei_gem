@@ -1,85 +1,76 @@
 require 'aws-sdk'
 
-def cfn_stack_names()
+def stack_exists?(stack_name)
   cloudformation = Aws::CloudFormation::Client.new
-  return cloudformation.describe_stacks().stacks.map{ |x| x.stack_name }.compact
+  cloudformation.describe_stacks({ stack_name: stack_name })
+  true
+rescue Aws::CloudFormation::Errors::ValidationError
+  false
 end
-
-def ensure_stack_doesnt_exist(stack_name , it_was_supposed_to_exist=false)
-  if cfn_stack_names.include? stack_name
-    puts "Deleting #{stack_name} stack"
-    puts "...it wasn't supposed to exist, perhaps left over from a previous test?" unless it_was_supposed_to_exist
-    cloudformation = Aws::CloudFormation::Client.new
-    cloudformation.delete_stack(stack_name: stack_name)
-    cloudformation.wait_until(:stack_delete_complete, stack_name: stack_name) { |waiter| waiter.delay = 1; waiter.max_attempts = 90 }
-  end
-end
-
 
 describe KumoKeisei::Stack do
+  let(:environment_name) { ENV.fetch('BUILDKITE_BUILD_NUMBER', `whoami`.strip) }
+  let(:stack_name) { "kumokeisei-test" }
+  let(:stack_full_name) { "#{stack_name}-#{environment_name}" }
 
-  stack_timeout_options = {
-    confirmation_timeout: 30,
-    waiter_delay: 1,
-    waiter_attempts: 90
-  }
+  let(:stack_timeout_options) do
+    {
+      confirmation_timeout: 30,
+      waiter_delay: 1,
+      waiter_attempts: 90
+    }
+  end
 
-  environment_name = ENV.fetch('BUILDKITE_BUILD_NUMBER', `whoami`.strip)
-  stack_name = "kumokeisei-test"
-  stack_full_name = "#{stack_name}-#{environment_name}"
+  after do
+    if stack_exists?(stack_full_name)
+      cloudformation = Aws::CloudFormation::Client.new
+      cloudformation.delete_stack(stack_name: stack_full_name)
+      cloudformation.wait_until(:stack_delete_complete, stack_name: stack_full_name) { |waiter| waiter.delay = 1; waiter.max_attempts = 90 }
+    end
+  end
 
   describe "#apply!" do
-    before do
-      ensure_stack_doesnt_exist(stack_full_name, false)
-    end
+    let(:stack) { KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options) }
+    subject { stack.apply!(stack_config) }
 
     context "when given a CloudFormation template" do
       context "and a parameter template file exists" do
-        it "creates a stack" do
-          stack_config = {
+        let(:stack_config) do
+          {
             config_path: File.join(File.dirname(__FILE__), 'fixtures'),
             template_path: File.join(File.dirname(__FILE__), 'fixtures', 'one-parameter.json')
           }
-
-          stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
-          stack.apply!(stack_config)
-          expect(cfn_stack_names).to include(stack_full_name)
         end
 
-        after do
-          ensure_stack_doesnt_exist(stack_full_name, true)
+        it "creates a stack" do
+          subject
+          expect(stack_exists?(stack_full_name)).to be true
         end
       end
 
       context "and a parameter template file is not required and does not exist" do
-        it "creates a stack" do
-          stack_config = {
+        let(:stack_config) do
+          {
             template_path: File.join(File.dirname(__FILE__), 'fixtures', 'no-parameter-section.json')
           }
-
-          stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
-          stack.apply!(stack_config)
-          expect(cfn_stack_names).to include(stack_full_name)
         end
 
-        after do
-          ensure_stack_doesnt_exist(stack_full_name, true)
+        it "creates a stack" do
+          subject
+          expect(stack_exists?(stack_full_name)).to be true
         end
       end
 
       context "and a parameter template file is required but does not exist" do
-        it "does not create a stack" do
-          stack_config = {
+        let(:stack_config) do
+          {
             template_path: File.join(File.dirname(__FILE__), 'fixtures', 'one-parameter-no-matching-parameter-template.json')
           }
-
-          stack = KumoKeisei::Stack.new(stack_name, environment_name, stack_timeout_options)
-          expect { stack.apply!(stack_config)}.to raise_error(Aws::CloudFormation::Errors::ValidationError)
-          expect(cfn_stack_names).not_to include(stack_full_name)
         end
 
-        after do
-          ensure_stack_doesnt_exist(stack_full_name, false)
+        it "does not create a stack" do
+          expect { subject }.to raise_error(Aws::CloudFormation::Errors::ValidationError)
+          expect(stack_exists?(stack_full_name)).to be false
         end
       end
     end
