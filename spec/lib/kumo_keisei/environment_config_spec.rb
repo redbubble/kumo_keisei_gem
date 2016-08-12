@@ -99,7 +99,7 @@ describe KumoKeisei::EnvironmentConfig do
         let(:parameters_erb) { ERB.new("foo: \"bar\"") }
 
         before do
-          allow(File).to receive(:exists?).with(params_template_file_path).and_return(true)
+          allow(File).to receive(:exist?).with(params_template_file_path).and_return(true)
           allow(file_loader).to receive(:load_hash).with('common.yml').and_return({})
           allow(file_loader).to receive(:load_hash).with('the_jungle.yml').and_return({})
           allow(file_loader).to receive(:load_hash).with('development.yml').and_return({})
@@ -247,7 +247,7 @@ describe KumoKeisei::EnvironmentConfig do
         subject { environment_config.cf_params }
 
         context 'templated params' do
-          before { allow(File).to receive(:exists?).with(params_template_file_path).and_return(true) }
+          before { allow(File).to receive(:exist?).with(params_template_file_path).and_return(true) }
 
           let(:parameters_erb) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
           let(:common_config) { { "stack_name" => "common"} }

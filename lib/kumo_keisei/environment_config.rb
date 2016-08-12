@@ -67,7 +67,7 @@ module KumoKeisei
     end
 
     def params_template_erb
-      return nil unless @params_template_file_path && File.exists?(@params_template_file_path)
+      return nil unless @params_template_file_path && File.exist?(@params_template_file_path)
       template_file_loader = KumoKeisei::FileLoader.new(config_dir_path: File.dirname(@params_template_file_path))
       template_file_loader.load_erb(File.basename(@params_template_file_path))
     end
