@@ -5,7 +5,6 @@
         "KumoTestSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "VpcId": "vpc-a0f36cc7",
                 "GroupDescription": "A security group to test KumoKeisei"
             }
         }
