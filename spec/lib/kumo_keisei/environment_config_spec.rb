@@ -10,7 +10,7 @@ describe KumoKeisei::EnvironmentConfig do
   end
   let(:file_loader) { instance_double(KumoKeisei::FileLoader) }
   let(:file_loader_cloudformation) { instance_double(KumoKeisei::FileLoader) }
-  let(:parameters) { ERB.new("") }
+  let(:parameters_erb) { ERB.new("") }
   let(:params_template_file_path) { 'junk.txt' }
   let(:environment_config_file_name) { "#{env_name}.yml" }
   let(:kms) { instance_double(KumoKi::KMS) }
@@ -20,58 +20,43 @@ describe KumoKeisei::EnvironmentConfig do
   before do
     allow(KumoKeisei::FileLoader).to receive(:new).and_return(file_loader)
     allow(KumoKi::KMS).to receive(:new).and_return(kms)
-    allow(file_loader).to receive(:load_erb).with(params_template_file_path).and_return(parameters)
+    allow(file_loader).to receive(:load_erb).with(params_template_file_path).and_return(parameters_erb)
     allow(File).to receive(:dirname).and_return('/tmp')
   end
 
   context 'backward compatibility' do
-      context 'config_path' do
-        let(:options) do
-          {
-            env_name: env_name,
-            config_path: config_dir_path
-          }
-        end
-        it 'will be used without complaint' do
-            expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
-            expect(logger).to receive(:warn).at_most(0).times
-            expect(logger).to receive(:fatal).at_most(0).times
-            described_class.new(options, logger)
-        end
+    context 'config_path' do
+      let(:options) do
+        {
+          env_name: env_name,
+          config_path: config_dir_path
+        }
+      end
+      it 'will be used without complaint' do
+          expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
+          expect(logger).to receive(:warn).at_most(0).times
+          expect(logger).to receive(:fatal).at_most(0).times
+          described_class.new(options, logger)
+      end
+    end
+
+    context 'config_dir_path' do
+      let(:options) do
+        {
+          env_name: env_name,
+          config_dir_path: config_dir_path
+        }
       end
 
-      context 'config_dir_path' do
-        let(:options) do
-          {
-            env_name: env_name,
-            config_dir_path: config_dir_path
-          }
-        end
-
-        it 'will be used if given and raise a deprecation warning' do
-            expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
-            expect(logger).to receive(:warn).with("[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead")
-            described_class.new(options, logger)
-        end
+      it 'will be used if given and raise a deprecation warning' do
+          expect(KumoKeisei::FileLoader).to receive(:new).with(config_dir_path: config_dir_path).and_return(nil)
+          expect(logger).to receive(:warn).with("[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead")
+          described_class.new(options, logger)
       end
-
-      context 'neither config_path nor config_dir_path' do
-        let(:options) do
-          {
-            env_name: env_name
-          }
-        end
-
-        it 'will raise an error' do
-          expect(logger).to receive(:fatal).with("Please provide a :config_path")
-          expect { described_class.new(options, logger)}.to raise_error(KumoKeisei::EnvironmentConfig::ConfigurationError)
-        end
-      end
+    end
   end
 
   context 'unit tests' do
-    let(:fake_environment_binding) { binding }
-
     describe '#get_binding' do
       subject { environment_config.get_binding }
 
@@ -97,25 +82,31 @@ describe KumoKeisei::EnvironmentConfig do
       end
 
       context 'params is empty' do
-        let(:parameters) { nil }
+        let(:parameters_erb) { nil }
 
         it 'creates an empty array' do
           expect(subject).to eq([])
         end
       end
 
+      context 'no config_path' do
+        let(:options) { { params_template_file_path: "not-a-real-file.yml.erb" } }
+
+        it { is_expected.to eq([]) }
+      end
+
       context 'a hard-coded param' do
-        let(:parameters) { ERB.new("stack_name: \"foo-stack\"") }
-        let(:parameters) { ERB.new("parameter_key: \"parameter_value\"") }
+        let(:parameters_erb) { ERB.new("foo: \"bar\"") }
 
         before do
+          allow(File).to receive(:exist?).with(params_template_file_path).and_return(true)
           allow(file_loader).to receive(:load_hash).with('common.yml').and_return({})
           allow(file_loader).to receive(:load_hash).with('the_jungle.yml').and_return({})
           allow(file_loader).to receive(:load_hash).with('development.yml').and_return({})
         end
 
         it 'creates a array containing an aws formatted parameter hash' do
-          expect(subject).to eq([{parameter_key: "parameter_key", parameter_value: "parameter_value"}])
+          expect(subject).to eq([{parameter_key: "foo", parameter_value: "bar"}])
         end
       end
 
@@ -256,7 +247,9 @@ describe KumoKeisei::EnvironmentConfig do
         subject { environment_config.cf_params }
 
         context 'templated params' do
-          let(:parameters) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
+          before { allow(File).to receive(:exist?).with(params_template_file_path).and_return(true) }
+
+          let(:parameters_erb) { ERB.new("stack_name: \"<%= config['stack_name'] %>\"" ) }
           let(:common_config) { { "stack_name" => "common"} }
           let(:staging_config) { { "stack_name" => "staging" } }
           let(:development_config) { { "stack_name" => "development" } }

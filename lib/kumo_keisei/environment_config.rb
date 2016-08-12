@@ -25,9 +25,6 @@ module KumoKeisei
       elsif options[:config_dir_path]
           @log.warn "[DEPRECATION] `:config_dir_path` is deprecated, please pass in `:config_path` instead"
           @config_file_loader = KumoKeisei::FileLoader.new(config_dir_path: options[:config_dir_path])
-      else
-          @log.fatal "Please provide a :config_path"
-          raise ConfigurationError.new("Please provide a :config_path")
       end
 
     end
@@ -52,10 +49,10 @@ module KumoKeisei
     def cf_params
       # returns a list of Cfn friendly paramater_value, paramater_key pairs for
       # consumption by cloudformation.
-      return [] unless params
+      return [] unless params_template_erb
       config
 
-      stack_params = YAML.load(params.result(binding))
+      stack_params = YAML.load(params_template_erb.result(binding))
       KumoKeisei::ParameterBuilder.new(stack_params).params
     end
 
@@ -69,8 +66,8 @@ module KumoKeisei
       @kms ||= KumoKi::KMS.new
     end
 
-    def params
-      return nil unless @params_template_file_path
+    def params_template_erb
+      return nil unless @params_template_file_path && File.exist?(@params_template_file_path)
       template_file_loader = KumoKeisei::FileLoader.new(config_dir_path: File.dirname(@params_template_file_path))
       template_file_loader.load_erb(File.basename(@params_template_file_path))
     end
