@@ -3,6 +3,15 @@ steps:
     command: script/unit_test.sh
     agents:
       location: aws
+  - name: ':rspec: integration-test'
+    command: script/integration_test.sh
+    agents:
+      location: aws
+    env:
+      AWS_REGION: us-east-1
+
+  - wait
+
   - name: ':gem: build'
     command: script/build.sh
     agents:

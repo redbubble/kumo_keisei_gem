@@ -3,7 +3,7 @@
 set -e
 
 echo "--- :clock1: :clock2: running specs :clock3: :clock4:"
-bundle install && bundle exec rspec --exclude-pattern "spec/integration/*_spec.rb"
+bundle install && bundle exec rspec --pattern "spec/integration/*_spec.rb"
 
 function inline_image {
   printf '\033]1338;url='"$1"';alt='"$2"'\a\n'
