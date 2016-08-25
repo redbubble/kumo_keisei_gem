@@ -8,12 +8,12 @@ describe KumoKeisei::ConsoleJockey do
     context 'no timeout' do
 
       it 'returns true if user enters yes' do
-        allow(STDIN).to receive(:gets) { 'yes'}
+        allow(STDIN).to receive(:gets) { 'yes' }
         expect(subject.get_confirmation(timeout)).to be true
       end
 
       it 'returns false if user enters anything other than yes' do
-        allow(STDIN).to receive(:gets) { 'aoisdjofa'}
+        allow(STDIN).to receive(:gets) { 'aoisdjofa' }
         expect(subject.get_confirmation).to be false
       end
     end
