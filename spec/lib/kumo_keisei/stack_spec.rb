@@ -204,7 +204,7 @@ describe KumoKeisei::Stack do
 
           allow(cloudformation).to receive(:wait_until).with(:stack_create_complete, stack_name: stack_name).and_return(nil)
 
-          expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with("There's a previous stack called my-stack-non-production that didn't create properly, I'll clean it up for you...").and_return(nil)
+          expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with("There's a previous stack called my-stack-non-production that didn't create properly, it will be deleted and rebuilt.").and_return(nil)
           subject.apply!(stack_config)
         end
       end

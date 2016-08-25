@@ -13,9 +13,12 @@ module KumoKeisei
     ]
 
     RECOVERABLE_STATUSES = [
-      'DELETE_COMPLETE',
       'ROLLBACK_COMPLETE',
       'ROLLBACK_FAILED'
+    ]
+
+    TERMINATED_STATUSES = [
+      'DELETE_COMPLETE'
     ]
 
     UNRECOVERABLE_STATUSES = [
@@ -45,7 +48,6 @@ module KumoKeisei
       if updatable?
         update!(stack_config)
       else
-        ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
         ensure_deleted!
         ConsoleJockey.write_line "Creating your new stack #{@stack_name}"
         create!(stack_config)
@@ -116,7 +118,16 @@ module KumoKeisei
       return false if stack.nil?
 
       return true if UPDATEABLE_STATUSES.include? stack.stack_status
-      return false if RECOVERABLE_STATUSES.include? stack.stack_status
+
+      return false if TERMINATED_STATUSES.include? stack.stack_status
+
+      if RECOVERABLE_STATUSES.include? stack.stack_status
+        ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, it will be deleted and rebuilt."
+        return false
+      end
+
+
+
       raise UpdateError.new("Stack is in an unrecoverable state") if UNRECOVERABLE_STATUSES.include? stack.stack_status
       raise UpdateError.new("Stack is busy, try again soon")
     end
