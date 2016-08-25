@@ -45,6 +45,7 @@ module KumoKeisei
       if updatable?
         update!(stack_config)
       else
+        ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
         ensure_deleted!
         ConsoleJockey.write_line "Creating your new stack #{@stack_name}"
         create!(stack_config)
@@ -56,7 +57,6 @@ module KumoKeisei
 
       flash_message "Warning! You are about to delete the CloudFormation Stack #{@stack_name}, enter 'yes' to continue."
       return unless ConsoleJockey.get_confirmation(@confirmation_timeout)
-
       wait_until_ready(false)
       ensure_deleted!
     end
@@ -107,7 +107,6 @@ module KumoKeisei
       return if stack.nil?
       return if stack.stack_status == 'DELETE_COMPLETE'
 
-      ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, I'll clean it up for you..."
       cloudformation.delete_stack(stack_name: @stack_name)
       cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = @waiter_delay; waiter.max_attempts = @waiter_attempts }
     end
