@@ -107,7 +107,7 @@ module KumoKeisei
     def ensure_deleted!
       stack = get_stack
       return if stack.nil?
-      return if stack.stack_status == 'DELETE_COMPLETE'
+      return if TERMINATED_STATUSES.include? stack.stack_status
 
       cloudformation.delete_stack(stack_name: @stack_name)
       cloudformation.wait_until(:stack_delete_complete, stack_name: @stack_name) { |waiter| waiter.delay = @waiter_delay; waiter.max_attempts = @waiter_attempts }
@@ -125,8 +125,6 @@ module KumoKeisei
         ConsoleJockey.write_line "There's a previous stack called #{@stack_name} that didn't create properly, it will be deleted and rebuilt."
         return false
       end
-
-
 
       raise UpdateError.new("Stack is in an unrecoverable state") if UNRECOVERABLE_STATUSES.include? stack.stack_status
       raise UpdateError.new("Stack is busy, try again soon")
