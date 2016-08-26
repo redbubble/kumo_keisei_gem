@@ -43,7 +43,6 @@ describe KumoKeisei::Stack do
 
   before do
     allow(KumoKeisei::ConsoleJockey).to receive(:flash_message)
-    allow(KumoKeisei::ConsoleJockey).to receive(:write_line).and_return(nil)
     allow(KumoKeisei::ConsoleJockey).to receive(:get_confirmation).with(confirmation_timeout).and_return(false)
     allow(Aws::CloudFormation::Client).to receive(:new).and_return(cloudformation)
     allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(cf_stack)
@@ -59,11 +58,20 @@ describe KumoKeisei::Stack do
       subject.destroy!
     end
 
-    it "does delete the stack if the user confirms" do
-      expect(KumoKeisei::ConsoleJockey).to receive(:get_confirmation).with(confirmation_timeout).and_return(true)
-      expect(cloudformation).to receive(:delete_stack).with({stack_name: stack_name}).and_return(cf_stack)
-      allow(cloudformation).to receive(:wait_until).with(:stack_delete_complete, stack_name: stack_name).and_return(nil)
-      subject.destroy!
+    context "and the user confirms" do
+      it "deletes the stack" do
+        expect(KumoKeisei::ConsoleJockey).to receive(:get_confirmation).with(confirmation_timeout).and_return(true)
+        expect(cloudformation).to receive(:delete_stack).with({stack_name: stack_name}).and_return(cf_stack)
+        allow(cloudformation).to receive(:wait_until).with(:stack_delete_complete, stack_name: stack_name).and_return(nil)
+        subject.destroy!
+      end
+
+      it "does not print a misleading message" do
+        expect(KumoKeisei::ConsoleJockey).to receive(:get_confirmation).with(confirmation_timeout).and_return(true)
+        expect(cloudformation).to receive(:delete_stack).with({stack_name: stack_name}).and_return(cf_stack)
+        allow(cloudformation).to receive(:wait_until).with(:stack_delete_complete, stack_name: stack_name).and_return(nil)
+        expect { subject.destroy! }.not_to output.to_stdout
+      end
     end
 
     it "does not delete the stack if the the user refuses confirmation" do
@@ -74,6 +82,11 @@ describe KumoKeisei::Stack do
   end
 
   describe "#apply!" do
+
+    before do
+      allow(KumoKeisei::ConsoleJockey).to receive(:write_line).and_return(nil)
+    end
+
     context "when you don't specify the location of the Cfn template" do
       let(:stack_config) {
         {
@@ -191,6 +204,7 @@ describe KumoKeisei::Stack do
 
           allow(cloudformation).to receive(:wait_until).with(:stack_create_complete, stack_name: stack_name).and_return(nil)
 
+          expect(KumoKeisei::ConsoleJockey).to receive(:write_line).with("There's a previous stack called my-stack-non-production that didn't create properly, it will be deleted and rebuilt.").and_return(nil)
           subject.apply!(stack_config)
         end
       end
