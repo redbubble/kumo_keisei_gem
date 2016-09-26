@@ -108,7 +108,7 @@ stack_config = {
   }
 }
 marshalled_config = stack.config(stack_config)
-if marshalled_config('DB_HOST').start_with? '192.' then
+if marshalled_config['DB_HOST'].start_with? '192.' then
   ...
 ```
 
