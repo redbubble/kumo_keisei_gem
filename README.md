@@ -96,7 +96,7 @@ stack_config = {
 stack.apply!(stack_config)
 ```
 
-### Getting the configuration without an `apply!`
+### Getting the configuration and secrets without an `apply!`
 
 If you need to inspect the configuration without applying a stack, call `config`:
 ```ruby
@@ -108,8 +108,12 @@ stack_config = {
   }
 }
 marshalled_config = stack.config(stack_config)
+marshalled_secrets = stack.plain_text_secrets(stack_config)
+
 if marshalled_config['DB_HOST'].start_with? '192.' then
+  passwd = marshalled_secrets['DB_PASS']
   ...
+end
 ```
 
 ## Upgrading from `KumoKeisei::CloudFormationStack` to `KumoKeisei::Stack`
