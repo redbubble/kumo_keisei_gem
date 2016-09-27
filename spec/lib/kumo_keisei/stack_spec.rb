@@ -307,7 +307,6 @@ describe KumoKeisei::Stack do
         expect { described_class.new(app_name, environment_name).config(stack_config)}.to raise_error(KumoKeisei::Stack::UsageError)
       end
     end
-
   end
 
   describe "#params_template_path" do
@@ -341,6 +340,25 @@ describe KumoKeisei::Stack do
       end
     end
 
+  end
+
+  describe "#plain_text_secrets" do
+    context "when passed a config_path and params_template_file_path" do
+      it "will return the results of the nested KumoKeisei::EnvironmentConfig.plain_text_secrets" do
+        expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, plain_text_secrets: { :foo=> 'bar', :baz=> 'qux' }))
+        expect(subject.plain_text_secrets(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
+      end
+    end
+
+    context "if not given a stack_config containing a `config_path`" do
+      let(:stack_config) {
+        {
+        }
+      }
+      it "will raise an error" do
+        expect { described_class.new(app_name, environment_name).plain_text_secrets(stack_config)}.to raise_error(KumoKeisei::Stack::UsageError)
+      end
+    end
   end
 
 end

@@ -82,6 +82,11 @@ module KumoKeisei
       environment_config(stack_config).config
     end
 
+    def plain_text_secrets(stack_config)
+      raise UsageError.new('You must provide a :config_path in the stack config hash to retrieve the stack\'s plain_text_secrets') unless stack_config.has_key?(:config_path)
+      environment_config(stack_config).plain_text_secrets
+    end
+
     def params_template_path(stack_config)
       stack_config.has_key?(:template_path) ? File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{File.basename(stack_config[:template_path], '.*')}.yml.erb")) : nil
     end
