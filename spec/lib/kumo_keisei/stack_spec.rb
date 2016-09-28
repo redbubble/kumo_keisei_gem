@@ -279,7 +279,7 @@ describe KumoKeisei::Stack do
   describe "#config" do
     context "when passed a config_path and params_template_file_path" do
       it "will return the results of the nested KumoConfig::EnvironmentConfig.config" do
-        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
+        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
@@ -293,7 +293,7 @@ describe KumoKeisei::Stack do
       }
 
       it "will return the results of the nested KumoConfig::EnvironmentConfig.config" do
-        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: nil)).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
+        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
@@ -345,7 +345,7 @@ describe KumoKeisei::Stack do
   describe "#plain_text_secrets" do
     context "when passed a config_path and params_template_file_path" do
       it "will return the results of the nested KumoConfig::EnvironmentConfig.plain_text_secrets" do
-        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, plain_text_secrets: { :foo=> 'bar', :baz=> 'qux' }))
+        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config).and_return(double(:environment_config, cf_params: {}, plain_text_secrets: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.plain_text_secrets(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
