@@ -23,7 +23,7 @@ describe KumoKeisei::Stack do
     {
       stack_name: stack_name,
       template_body: stack_template_body,
-      parameters: {},
+      parameters: [],
       capabilities: ["CAPABILITY_IAM"]
     }
   end
