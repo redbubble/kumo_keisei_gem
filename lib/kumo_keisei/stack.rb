@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'kumo_config'
 
 module KumoKeisei
   class Stack
@@ -174,7 +175,7 @@ module KumoKeisei
     end
 
     def environment_config(stack_config)
-      EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path(stack_config)))
+      KumoConfig::EnvironmentConfig.new(stack_config)
     end
 
     def stack_events_url

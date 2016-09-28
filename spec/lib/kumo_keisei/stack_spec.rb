@@ -48,7 +48,7 @@ describe KumoKeisei::Stack do
     allow(cloudformation).to receive(:describe_stacks).with({stack_name: stack_name}).and_return(cf_stack)
     allow(KumoKeisei::ParameterBuilder).to receive(:new).and_return(parameter_builder)
     allow(File).to receive(:read).with(stack_cfntemplate_filename).and_return(stack_template_body)
-    allow(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_cfnparams_filename}")).and_return(double(:environment_config, cf_params: {}))
+    allow(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config).and_return(double(:environment_config))
     Dir.chdir('/')
   end
 
@@ -278,8 +278,8 @@ describe KumoKeisei::Stack do
 
   describe "#config" do
     context "when passed a config_path and params_template_file_path" do
-      it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
-        expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
+      it "will return the results of the nested KumoConfig::EnvironmentConfig.config" do
+        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
@@ -292,8 +292,8 @@ describe KumoKeisei::Stack do
         }
       }
 
-      it "will return the results of the nested KumoKeisei::EnvironmentConfig.config" do
-        expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: nil)).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
+      it "will return the results of the nested KumoConfig::EnvironmentConfig.config" do
+        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: nil)).and_return(double(:environment_config, cf_params: {}, config: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.config(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
@@ -344,8 +344,8 @@ describe KumoKeisei::Stack do
 
   describe "#plain_text_secrets" do
     context "when passed a config_path and params_template_file_path" do
-      it "will return the results of the nested KumoKeisei::EnvironmentConfig.plain_text_secrets" do
-        expect(KumoKeisei::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, plain_text_secrets: { :foo=> 'bar', :baz=> 'qux' }))
+      it "will return the results of the nested KumoConfig::EnvironmentConfig.plain_text_secrets" do
+        expect(KumoConfig::EnvironmentConfig).to receive(:new).with(stack_config.merge(params_template_file_path: "/#{stack_template_name}.yml.erb")).and_return(double(:environment_config, cf_params: {}, plain_text_secrets: { :foo=> 'bar', :baz=> 'qux' }))
         expect(subject.plain_text_secrets(stack_config)).to eq({:foo=> 'bar', :baz=>'qux'})
       end
     end
