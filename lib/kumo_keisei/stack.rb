@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'kumo_config'
 
 module KumoKeisei
   class Stack
@@ -93,6 +94,21 @@ module KumoKeisei
 
     private
 
+    def cf_params(stack_config, environment_config)
+      erb = params_template_erb(stack_config)
+      return [] unless erb
+
+      stack_params = YAML.load(erb.result(environment_config.get_binding))
+      KumoKeisei::ParameterBuilder.new(stack_params).params
+    end
+
+    def params_template_erb(stack_config)
+      template_path = params_template_path(stack_config)
+
+      return nil unless template_path && File.exist?(template_path)
+      ERB.new(File.read(template_path))
+    end
+
     def transform_logical_resource_id(id)
       id.to_s.split('_').map {|w| w.capitalize }.join
     end
@@ -141,7 +157,7 @@ module KumoKeisei
       cloudformation.create_stack(
         stack_name: @stack_name,
         template_body: File.read(stack_config[:template_path]),
-        parameters: environment_config(stack_config).cf_params,
+        parameters: cf_params(stack_config, environment_config(stack_config)),
         capabilities: ["CAPABILITY_IAM"],
         on_failure: "DELETE"
       )
@@ -159,7 +175,7 @@ module KumoKeisei
       cloudformation.update_stack(
         stack_name: @stack_name,
         template_body: File.read(stack_config[:template_path]),
-        parameters: environment_config(stack_config).cf_params,
+        parameters: cf_params(stack_config, environment_config(stack_config)),
         capabilities: ["CAPABILITY_IAM"]
       )
 
@@ -174,7 +190,7 @@ module KumoKeisei
     end
 
     def environment_config(stack_config)
-      EnvironmentConfig.new(stack_config.merge(params_template_file_path: params_template_path(stack_config)))
+      KumoConfig::EnvironmentConfig.new(stack_config)
     end
 
     def stack_events_url

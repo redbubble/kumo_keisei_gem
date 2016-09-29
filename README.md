@@ -118,9 +118,9 @@ end
 
 ## Upgrading from `KumoKeisei::CloudFormationStack` to `KumoKeisei::Stack`
 
-`KumoKeisei::CloudFormationStack` is deprecated and should be replaced with a `KumoKeisei::Stack` which encompasses an environment object (`KumoKeisei::EnvironmentConfig`).
+`KumoKeisei::CloudFormationStack` is deprecated and should be replaced with a `KumoKeisei::Stack` which encompasses an environment object (`KumoConfig::EnvironmentConfig`).
 
-Previously you would have to construct your own `EnvironmentConfig` which would marshal it's configuration, then instantiate a `CloudFormationStack` and conduct operations on it.
+Previously you would have to construct your own `EnvironmentConfig` which would marshal its configuration, then instantiate a `CloudFormationStack` and conduct operations on it.
 
 E.g. `apply-env`:
 ```ruby
@@ -131,7 +131,7 @@ environment_name = ARGV.fetch(0) rescue raise("Error! No environment name given!
 stack = CloudFormationStack.new(environment_name)
 stack.apply
 ```
-and `environment_config.rb`:
+and `cloudformation_stack.rb`:
 ```ruby
 require 'kumo_keisei'
 
@@ -216,14 +216,3 @@ You can test the Cloudformation responsibilities of this gem by extending the in
 To run these tests you need a properly configured AWS environment (with AWS_DEFAULT_REGION, AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY set) and then run `./script/integration_test.sh`.
 
 If you run this within a Buildkite job then you will have a stack named "kumokeisei-test-$buildnumber" created and torn down for each integration test context. If you run this outside of a Buildkite job then the stack will be named "kumokeisei-test-$username".
-
-### Manual testing with Kumo Tools container
-
-Changes to the gem can be manually tested end to end in a project that uses the gem (i.e. http-wala).
-
-1. First start the dev-tools container: `kumo tools debug non-production`
-1. gem install specific_install
-1. Re-install the gem: `gem specific_install https://github.com/redbubble/kumo_keisei_gem.git -b <your_branch>`
-1. Fire up a console: `irb`
-1. Require the gem: `require "kumo_keisei"`
-1. Interact with the gem's classes. `KumoKeisei::Stack.new(...).apply!`
