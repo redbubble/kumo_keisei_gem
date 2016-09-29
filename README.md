@@ -131,7 +131,7 @@ environment_name = ARGV.fetch(0) rescue raise("Error! No environment name given!
 stack = CloudFormationStack.new(environment_name)
 stack.apply
 ```
-and `environment_config.rb`:
+and `cloudformation_stack.rb`:
 ```ruby
 require 'kumo_keisei'
 
