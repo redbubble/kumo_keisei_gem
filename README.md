@@ -152,7 +152,7 @@ class CloudFormationStack
 
   def apply
     # Inject the VPC and Subnets into the application's environment config
-    foo_config = KumoKeisei::EnvironmentConfig.new(
+    foo_config = KumoConfig::EnvironmentConfig.new(
       env_name: env_name,
       config_dir_path: File.expand_path(File.join("..", "..", "env", "config"), __FILE__)
     )
