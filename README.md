@@ -22,7 +22,7 @@ Or install it yourself as:
 
 ### Basic Usage
 
-The basic usage will give you a CloudFormation stack named `{application}-{environment}`. The default type is `nodes`
+The basic usage will give you a CloudFormation stack named `{application}-{environment}`.
 
 ```ruby
 application_name = "myapp"
