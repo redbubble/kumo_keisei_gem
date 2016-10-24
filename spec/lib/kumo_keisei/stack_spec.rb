@@ -232,17 +232,6 @@ describe KumoKeisei::Stack do
         subject.apply!(stack_config)
       end
 
-      context "a stack name that is too long" do
-        let(:app_name) { "this-will-create-a-very-long-stack-name-that-will-break-aws" }
-
-        it "blows up since the ELB names have to be 32 or shorter" do
-          allow(cloudformation).to receive(:wait_until).with(:stack_update_complete, stack_name: stack_name)
-          allow(cloudformation).to receive(:update_stack)
-          allow(subject).to receive(:updatable?).and_return(false)
-
-          expect { subject.apply!(stack_config) }.to raise_error(KumoKeisei::StackValidationError, "The stack name needs to be 32 characters or shorter")
-        end
-      end
     end
 
     describe "#outputs" do
