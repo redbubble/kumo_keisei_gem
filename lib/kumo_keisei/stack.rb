@@ -152,7 +152,6 @@ module KumoKeisei
     end
 
     def create!(stack_config)
-      raise StackValidationError.new("The stack name needs to be 32 characters or shorter") if @stack_name.length > 32
 
       cloudformation.create_stack(
         stack_name: @stack_name,
