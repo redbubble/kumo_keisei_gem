@@ -92,6 +92,10 @@ module KumoKeisei
       stack_config.has_key?(:template_path) ? File.absolute_path(File.join(File.dirname(stack_config[:template_path]), "#{File.basename(stack_config[:template_path], '.*')}.yml.erb")) : nil
     end
 
+    def refresh!
+      get_stack(dump_cache: true)
+    end
+
     private
 
     def cf_params(stack_config, environment_config)

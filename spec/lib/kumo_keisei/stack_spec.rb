@@ -350,4 +350,12 @@ describe KumoKeisei::Stack do
     end
   end
 
+  describe '#refresh!' do
+    it 'always calls the CloudFormation API' do
+      expect(cloudformation).to receive(:describe_stacks).twice
+
+      2.times { described_class.new(app_name, environment_name).refresh! }
+    end
+  end
+
 end
